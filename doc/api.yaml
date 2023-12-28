@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: WASAPhoto API
   description: API for WASAPhoto, a webapp for sharing photos.
-  version: 1.0.0
+  version: 2.0.0
   
   
 servers:
@@ -35,6 +35,7 @@ paths:
                 name:
                   $ref: "#/components/schemas/Username"
         required: true
+      
       responses:
         '201':
           description: User log-in action successful
@@ -46,7 +47,7 @@ paths:
                   identifier:
                     $ref: "#/components/schemas/UniqueID"
                     
-        '200':
+        '204':
           description: User already logged-in
           
         '400': { $ref: "#/components/responses/BadRequest" }
@@ -57,24 +58,23 @@ paths:
       summary: Get a stream of photos
       description: Retrieve photos in reverse chronological order from followed users.
       operationId: getMyStream
+      parameters:
+        - name: page
+          in: query
+          required: true
+          description: |
+            The next nth range (0-10) of photos retrieved in reverse choronological
+            order.
+          schema:
+            type: integer
+            minimum: 1
+            example: 1
+      
       responses:
         '200':
           description: A list of photos
           content:
             application/json:
-              example:
-                - id: 1
-                  author: alice
-                  imageUrl: "https://example.com/photo1.jpg"
-                  timestamp: "2023-01-01T12:00:00Z"
-                  likesAmount: 5
-                  commentsAmount: 3
-                - id: 2
-                  author: bob
-                  imageUrl: "https://example.com/photo2.jpg"
-                  timestamp: "2023-01-02T14:30:00Z"
-                  likesAmount: 10
-                  commentsAmount: 2
               schema:
                 type: array
                 items:
@@ -85,15 +85,12 @@ paths:
         '500': { $ref: "#/components/responses/InternalServerError" }
               
   /photos/{photoId}:
+    parameters:
+      - $ref: "#/components/parameters/PhotoID"
     get:
       summary: Get details of a specific photo
       description: Retrieve details of a specific photo.
-      parameters:
-        - name: photoId
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/UniqueID"
+      operationId: getPhoto
       responses:
         '200':
           description: Details of the photo
@@ -110,21 +107,18 @@ paths:
         '500': { $ref: "#/components/responses/InternalServerError" }
 
   /photos/{photoId}/like:
-    post:
+    parameters:
+      - $ref: "#/components/parameters/PhotoID"
+          
+    put:
       summary: Like a photo
       description: Like a specific photo.
       operationId: likePhoto
-      parameters:
-        - name: photoId
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/UniqueID"
       responses:
-        '201':
+        '200':
           description: Photo liked successfully
           
-        '200':
+        '204':
           description: Photo already liked
           
         '400': { $ref: "#/components/responses/BadRequest" }
@@ -135,17 +129,12 @@ paths:
       summary: Unlike a photo
       description: Unlike a liked photo
       operationId: unlikePhoto
-      parameters:
-        - name: photoId
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/UniqueID"
+    
       responses:
-        '201':
+        '200':
           description: Photo unliked successfully
           
-        '200':
+        '204':
           description: Photo already unliked
           
         '400': { $ref: "#/components/responses/BadRequest" }
@@ -153,28 +142,39 @@ paths:
         '500': { $ref: "#/components/responses/InternalServerError" }
 
   /photos/{photoId}/comment:
+    parameters:
+      - $ref: "#/components/parameters/PhotoID"
+      
+    get:
+      summary: Get comments
+      description: Get a list of all comments under the photo
+      operationId: getComments
+      
+      responses:
+        '200': 
+          description: A list of comments
+          content:
+            application/json:
+              schema: 
+                type: array
+                items:
+                  $ref: "#/components/schemas/Comment"
+                  
+        '400': { $ref: "#/components/responses/BadRequest" }
+        '401': { $ref: "#/components/responses/Unauthorized" }
+        '500': { $ref: "#/components/responses/InternalServerError" }
+                  
     post:
       summary: Add a comment to a photo
       description: Add a comment to a specific photo.
       operationId: commentPhoto
-      parameters:
-        - name: photoId
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/UniqueID"
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                commentText:
-                  type: string
-                  example: "You look good, my man :)"
-              required:
-                - commentText
+              $ref: "#/components/schemas/Comment"
+              
       responses:
         '201':
           description: Comment added successfully
@@ -184,23 +184,23 @@ paths:
         '500': { $ref: "#/components/responses/InternalServerError" }
 
   /photos/{photoId}/comment/{commentId}:
+    parameters:
+      - $ref: "#/components/parameters/PhotoID"
+      - name: commentId
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/UniqueID"
+      
     delete:
       summary: Remove a comment from a photo
-      description: Remove a comment from a specific photo provided that you are the author.
+      description: |
+        Remove a comment from a specific photo provided that you are the author
+        of the photo under which the comment lies.
       operationId: uncommentPhoto
-      parameters:
-        - name: photoId
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/UniqueID"
-        - name: commentId
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/UniqueID"
+      
       responses:
-        '201':
+        '200':
           description: Comment removed successfully
         
         '404': 
@@ -210,18 +210,16 @@ paths:
         '401': { $ref: "#/components/responses/Unauthorized" }
         '403': { $ref: "#/components/responses/Forbidden" }
         '500': { $ref: "#/components/responses/InternalServerError" }
-
+  
   /users/{username}:
+    parameters:
+      - $ref: "#/components/parameters/Username"
+      
     get:
       summary: Get user profile
       description: Retrieve details of a user's profile.
       operationId: getUserProfile
-      parameters:
-        - name: username
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Username"
+      
       responses:
         '200':
           description: User profile details
@@ -229,11 +227,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/User"
-              example:
-                username: alice
-                totalPhotos: 15
-                followersAmount: 20
-                followingAmount: 10
         
         '404':
           description: User not found
@@ -241,18 +234,20 @@ paths:
         '400': { $ref: "#/components/responses/BadRequest" }
         '401': { $ref: "#/components/responses/Unauthorized" }
         '500': { $ref: "#/components/responses/InternalServerError" }
+  
+  
 
-  /users/{username}/follow:
-    post:
+      
+  /users/{userId}/followed/{username}:
+    parameters:
+      - $ref: "#/components/parameters/UserID"
+      - $ref: "#/components/parameters/Username"
+      
+    put:
       summary: Follow a user
       description: Follow a specific user.
       operationId: followUser
-      parameters:
-        - name: username
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Username"
+  
       responses:
         '201':
           description: User followed successfully
@@ -264,18 +259,12 @@ paths:
         '401': { $ref: "#/components/responses/Unauthorized" }
         '403': { $ref: "#/components/responses/Forbidden" }
         '500': { $ref: "#/components/responses/InternalServerError" }
-
-  /users/{username}/unfollow:
-    post:
+      
+    delete:
       summary: Unfollow a user
       description: Unfollow a specific user.
       operationId: unfollowUser
-      parameters:
-        - name: username
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Username"
+      
       responses:
         '201':
           description: User unfollowed successfully
@@ -288,17 +277,18 @@ paths:
         '403': { $ref: "#/components/responses/Forbidden" }
         '500': { $ref: "#/components/responses/InternalServerError" }
 
-  /users/{username}/ban:
-    post:
+    
+
+  /users/{userId}/banned/{username}:
+    parameters:
+      - $ref: "#/components/parameters/UserID"
+      - $ref: "#/components/parameters/Username"
+      
+    put:
       summary: Ban a user
       description: Ban a specific user.
       operationId: banUser
-      parameters:
-        - name: username
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Username"
+      
       responses:
         '201':
           description: User banned successfully
@@ -310,23 +300,17 @@ paths:
         '401': { $ref: "#/components/responses/Unauthorized" }
         '403': { $ref: "#/components/responses/Forbidden" }
         '500': { $ref: "#/components/responses/InternalServerError" }
-
-  /users/{username}/unban:
-    post:
+      
+    delete:
       summary: Unban a user
       description: Unban a specific user.
       operationId: unbanUser
-      parameters:
-        - name: username
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Username"
+      
       responses:
-        '201':
+        '200':
           description: User unbanned successfully
         
-        '200':
+        '204':
           description: User already unbanned
           
         '400': { $ref: "#/components/responses/BadRequest" }
@@ -334,17 +318,15 @@ paths:
         '403': { $ref: "#/components/responses/Forbidden" }
         '500': { $ref: "#/components/responses/InternalServerError" }
 
-  /users/{username}/change-username:
+  /users/{userId}/change-username:
+    parameters:
+      - $ref: "#/components/parameters/UserID"
+      
     post:
       summary: Change username
       description: Change the username of the authenticated user.
       operationId: setMyUserName
-      parameters:
-        - name: username
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Username"
+      
       requestBody:
         required: true
         content:
@@ -356,19 +338,23 @@ paths:
                   $ref: "#/components/schemas/Username"
               required:
                 - newUsername
+  
       responses:
-        '201':
+        '200':
           description: Username changed successfully
           
-        '200':
-          description: Username typed is the same
+        '204':
+          description: Username typed is the similar to the former one
           
         '400': { $ref: "#/components/responses/BadRequest" }
         '401': { $ref: "#/components/responses/Unauthorized" }
         '403': { $ref: "#/components/responses/Forbidden" }
         '500': { $ref: "#/components/responses/InternalServerError" }
 
-  /users/{username}/upload-photo:
+  /users/{userId}/upload-photo:
+    parameters:
+      - $ref: "#/components/parameters/UserID"
+      
     post:
       summary: Upload a photo
       description: | 
@@ -377,12 +363,6 @@ paths:
         and initiates likesAmount and commentsAmount to 0.
         
       operationId: uploadPhoto
-      parameters:
-        - name: username
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Username"
       requestBody:
         required: true
         content:
@@ -404,24 +384,18 @@ paths:
         '403': { $ref: "#/components/responses/Forbidden" }
         '500': { $ref: "#/components/responses/InternalServerError" }
 
-  /users/{username}/remove-photo/{photoId}:
+  /users/{userId}/remove-photo/{photoId}:
+    parameters:
+      - $ref: "#/components/parameters/UserID"
+      - $ref: "#/components/parameters/PhotoID"
+      
     delete:
       summary: Remove a photo
       description: Remove a specific photo for the authenticated user.
       operationId: deletePhoto
-      parameters:
-        - name: username
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Username"
-        - name: photoId
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/UniqueID"
+      
       responses:
-        '201':
+        '200':
           description: Photo removed successfully
         
         '404':
@@ -459,13 +433,42 @@ paths:
         '400': { $ref: "#/components/responses/BadRequest" }
         '401': { $ref: "#/components/responses/Unauthorized" }
         '500': { $ref: "#/components/responses/InternalServerError" }
-
+        
+  
 components:
+
   securitySchemes:
     UsernameAuth:
       type: http
       scheme: bearer
-
+      
+      
+  parameters:
+    PhotoID:
+      schema:
+        $ref: "#/components/schemas/UniqueID"
+      name: photoId
+      in: path
+      required: true
+      description: Photo ID
+    
+    UserID:
+      schema:
+        $ref: "#/components/schemas/UniqueID"
+      name: userId
+      in: path
+      required: true
+      description: User ID
+      
+    Username:
+      schema:
+        $ref: "#/components/schemas/Username"
+      name: username
+      in: path
+      required: true
+      description: Username
+      
+      
   responses:
     BadRequest:
       description: The request was not compliant with the documentation (eg. missing fields, etc)
@@ -479,6 +482,7 @@ components:
     InternalServerError:
       description: The server encountered an internal error. Further info in server logs
       
+      
   schemas:
     UniqueID:
       description: UniqueID for any object needed
@@ -486,6 +490,7 @@ components:
       pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
       minLength: 36
       maxLength: 36
+      readOnly: true
       example: "550e8400-e29b-41d4-a716-446655440000"
       
     Username:
@@ -512,7 +517,6 @@ components:
       maxLength: 20
       readOnly: true
       
-    
     Amount:
       description: Representation of an amount of things of interest
       type: integer
@@ -524,7 +528,7 @@ components:
       description: a user profile containg username, amount of photos, followers and followings
       type: object
       properties:
-        id: 
+        userID: 
           $ref: "#/components/schemas/UniqueID"
         username: 
           $ref: "#/components/schemas/Username"
@@ -535,8 +539,6 @@ components:
         follwingsAmount:
           $ref: "#/components/schemas/Amount"
       
-    
-    
     Photo:
       description: | 
         A photo exists in a separate server or a website such as example.com.
@@ -545,7 +547,7 @@ components:
 
       type: object
       properties:
-        id: 
+        PhotoID: 
           $ref: "#/components/schemas/UniqueID"
         author: 
           $ref: "#/components/schemas/Username"
@@ -558,3 +560,18 @@ components:
         commentsAmount:
           $ref: "#/components/schemas/Amount"
           
+    Comment:
+      description: Representation of a single comment
+      type: object
+      properties:
+        commentID:
+          $ref: "#/components/schemas/UniqueID"
+        author: 
+          $ref: "#/components/schemas/Username"
+        timestamp:
+          $ref: "#/components/schemas/Timestamp"
+        commentText:
+          type: string
+          example: "You look good, my man :)"
+      required:
+        - commentText  
