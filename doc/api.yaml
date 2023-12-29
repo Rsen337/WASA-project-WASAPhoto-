@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: WASAPhoto API
   description: API for WASAPhoto, a webapp for sharing photos.
-  version: 2.0.0
+  version: 2.1.0
   
   
 servers:
@@ -210,6 +210,34 @@ paths:
         '401': { $ref: "#/components/responses/Unauthorized" }
         '403': { $ref: "#/components/responses/Forbidden" }
         '500': { $ref: "#/components/responses/InternalServerError" }
+      
+  /users:
+    get:
+      summary: Search for user profiles
+      description: Search for user profiles by username.
+      operationId: searchUser
+      parameters:
+        - name: username
+          in: query
+          required: true
+          schema:
+            $ref: "#/components/schemas/Username"
+      responses:
+        '200':
+          description: List of matching user profiles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+        
+        '404':
+          description: No matches have been found
+          
+        '400': { $ref: "#/components/responses/BadRequest" }
+        '401': { $ref: "#/components/responses/Unauthorized" }
+        '500': { $ref: "#/components/responses/InternalServerError" }
   
   /users/{username}:
     parameters:
@@ -236,9 +264,31 @@ paths:
         '500': { $ref: "#/components/responses/InternalServerError" }
   
   
-
+  /users/{userId}/followings:
+    parameters:
+      - $ref: "#/components/parameters/UserID"
       
-  /users/{userId}/followed/{username}:
+    get:
+      summary: Get followings
+      description: Get a list of followings
+      operationId: getFollowings
+      
+      responses:
+        '200':
+          description: List of user profiles 
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+          
+        '400': { $ref: "#/components/responses/BadRequest" }
+        '401': { $ref: "#/components/responses/Unauthorized" }
+        '500': { $ref: "#/components/responses/InternalServerError" }
+      
+      
+  /users/{userId}/followings/{username}:
     parameters:
       - $ref: "#/components/parameters/UserID"
       - $ref: "#/components/parameters/Username"
@@ -277,7 +327,29 @@ paths:
         '403': { $ref: "#/components/responses/Forbidden" }
         '500': { $ref: "#/components/responses/InternalServerError" }
 
+  /users/{userId}/banned:
+    parameters:
+      - $ref: "#/components/parameters/UserID"
     
+    get:
+      summary: Get banned users
+      description: Get a list of banned users
+      operationId: getBannedUsers
+      
+      responses:
+        '200':
+          description: List of user profiles 
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+          
+        '400': { $ref: "#/components/responses/BadRequest" }
+        '401': { $ref: "#/components/responses/Unauthorized" }
+        '500': { $ref: "#/components/responses/InternalServerError" }
+      
 
   /users/{userId}/banned/{username}:
     parameters:
@@ -351,9 +423,28 @@ paths:
         '403': { $ref: "#/components/responses/Forbidden" }
         '500': { $ref: "#/components/responses/InternalServerError" }
 
-  /users/{userId}/upload-photo:
+  /users/{userId}/photo:
     parameters:
       - $ref: "#/components/parameters/UserID"
+      
+    get:
+      summary: Get user's photos
+      description: Get a list of photos posted by the authenticated user
+      operationId: getMyPhotos
+      
+      responses:
+        '200':
+          description: List of user profiles 
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Photo"
+          
+        '400': { $ref: "#/components/responses/BadRequest" }
+        '401': { $ref: "#/components/responses/Unauthorized" }
+        '500': { $ref: "#/components/responses/InternalServerError" }
       
     post:
       summary: Upload a photo
@@ -384,7 +475,7 @@ paths:
         '403': { $ref: "#/components/responses/Forbidden" }
         '500': { $ref: "#/components/responses/InternalServerError" }
 
-  /users/{userId}/remove-photo/{photoId}:
+  /users/{userId}/photo/{photoId}:
     parameters:
       - $ref: "#/components/parameters/UserID"
       - $ref: "#/components/parameters/PhotoID"
@@ -406,33 +497,6 @@ paths:
         '403': { $ref: "#/components/responses/Forbidden" }
         '500': { $ref: "#/components/responses/InternalServerError" }
 
-  /search/:
-    get:
-      summary: Search for user profiles
-      description: Search for user profiles by username.
-      operationId: searchUser
-      parameters:
-        - name: username
-          in: query
-          required: true
-          schema:
-            $ref: "#/components/schemas/Username"
-      responses:
-        '200':
-          description: List of matching user profiles
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/User"
-        
-        '404':
-          description: No matches have been found
-          
-        '400': { $ref: "#/components/responses/BadRequest" }
-        '401': { $ref: "#/components/responses/Unauthorized" }
-        '500': { $ref: "#/components/responses/InternalServerError" }
         
   
 components:
