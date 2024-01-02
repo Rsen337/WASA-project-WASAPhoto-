@@ -6,8 +6,8 @@ info:
   
   
 servers:
-  - url: http://localhost:8090
-    description: For development
+  - url: http://localhost:3000
+    description: For development purposes
     
 
 security:
@@ -106,9 +106,10 @@ paths:
         '401': { $ref: "#/components/responses/Unauthorized" }
         '500': { $ref: "#/components/responses/InternalServerError" }
 
-  /photos/{photoId}/like:
+  /photos/{photoId}/like/{userId}:
     parameters:
       - $ref: "#/components/parameters/PhotoID"
+      - $ref: "#/components/parameters/UserID"
           
     put:
       summary: Like a photo
@@ -457,15 +458,11 @@ paths:
       requestBody:
         required: true
         content:
-          multipart/form-data:
+          image/png:
             schema:
-              type: object
-              properties:
-                image:
-                  type: string
-                  format: binary
-              required:
-                - image
+              description: Photo to be uploaded as .png file
+              type: string
+              format: binary
       responses:
         '201':
           description: Photo uploaded successfully
