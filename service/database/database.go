@@ -41,6 +41,8 @@ type AppDatabase interface {
 	GetName() (string, error)
 	SetName(name string) error
 
+	// Register or log in user
+	DoLogin(token string) (string, error)
 	Ping() error
 }
 
@@ -55,14 +57,36 @@ func New(db *sql.DB) (AppDatabase, error) {
 		return nil, errors.New("database is required when building a AppDatabase")
 	}
 
+	// Enable foreign keys
+	_, errPramga := db.Exec(`PRAGMA foreign_keys= ON`)
+	if errPramga != nil {
+		return nil, fmt.Errorf("error setting pragmas: %w", errPramga)
+	}
+
 	// Check if table exists. If not, the database is empty, and we need to create the structure
 	var tableName string
 	err := db.QueryRow(`SELECT name FROM sqlite_master WHERE type='table' AND name='example_table';`).Scan(&tableName)
 	if errors.Is(err, sql.ErrNoRows) {
-		sqlStmt := `CREATE TABLE example_table (id INTEGER NOT NULL PRIMARY KEY, name TEXT);`
-		_, err = db.Exec(sqlStmt)
-		if err != nil {
-			return nil, fmt.Errorf("error creating database structure: %w", err)
+
+		// define all the necessary tables
+		sqlStmts := [2]string{
+			`CREATE TABLE IF NOT EXISTS example_table (
+				id INTEGER NOT NULL PRIMARY KEY, name TEXT
+			);`,
+
+			`CREATE TABLE IF NOT EXISTS tokens (
+				userId TEXT PRIMARY KEY,
+				token TEXT UNIQUE
+			);`,
+		}
+
+		// create them iteratively
+		for i := 0; i < len(sqlStmts); i++ {
+			sqlStmt := sqlStmts[i]
+			_, err = db.Exec(sqlStmt)
+			if err != nil {
+				return nil, fmt.Errorf("error creating database structure for [%s] with error: %w", sqlStmt, err)
+			}
 		}
 	}
 

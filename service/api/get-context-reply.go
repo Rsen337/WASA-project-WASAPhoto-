@@ -1,4 +1,4 @@
-package api // To be replaced
+package api
 
 import (
 	"github.com/Rsen337/WASA-project-WASAPhoto-/service/api/reqcontext"

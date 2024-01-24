@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: WASAPhoto API
   description: API for WASAPhoto, a webapp for sharing photos.
-  version: 2.2.0
+  version: 3.0.0
   
   
 servers:
@@ -32,7 +32,7 @@ paths:
             schema:
               type: object
               properties:
-                name:
+                token:
                   $ref: "#/components/schemas/Username"
         required: true
       
@@ -46,10 +46,7 @@ paths:
                 properties:
                   identifier:
                     $ref: "#/components/schemas/UniqueID"
-                    
-        '204':
-          description: User already logged-in
-          
+                  
         '400': { $ref: "#/components/responses/BadRequest" }
         '500': { $ref: "#/components/responses/InternalServerError" }
 
@@ -169,15 +166,15 @@ paths:
         '401': { $ref: "#/components/responses/Unauthorized" }
         '500': { $ref: "#/components/responses/InternalServerError" }
 
-  /users/{userId}/followings/{username}:
+  /users/{userId}/followings/{otherUserId}:
     parameters:
       - $ref: "#/components/parameters/UserID"
-      - $ref: "#/components/parameters/Username"
+      - $ref: "#/components/parameters/OtherUserID"
       
     put:
       tags: ["followings"]
       summary: Follow a user
-      description: Follow a specific user by his/her username
+      description: Follow a specific user 
       operationId: followUser
   
       responses:
@@ -235,16 +232,15 @@ paths:
         '401': { $ref: "#/components/responses/Unauthorized" }
         '500': { $ref: "#/components/responses/InternalServerError" }
 
-  /users/{userId}/banned/{username}:
+  /users/{userId}/banned/{otherUserId}:
     parameters:
       - $ref: "#/components/parameters/UserID"
-      - $ref: "#/components/parameters/Username"
+      - $ref: "#/components/parameters/OtherUserID"
       
     put:
       tags: ["ban"]
       summary: Ban a user
-      description: | 
-        Ban a specific user by his/her username. The banned user can't search the banee, can't see his/her photos and thus can't like and comments on them
+      description: Ban a specific user 
       operationId: banUser
       
       responses:
@@ -285,20 +281,14 @@ paths:
       description: Search for user profiles by username.
       operationId: searchUser
       parameters:
-        - name: username
-          in: query
-          required: true
-          schema:
-            $ref: "#/components/schemas/Username"
+        - $ref: "#/components/parameters/Username"
       responses:
         '200':
           description: List of matching user profiles
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/User"
+                $ref: "#/components/schemas/Users"
         
         '404':
           description: No matches have been found
@@ -307,14 +297,14 @@ paths:
         '401': { $ref: "#/components/responses/Unauthorized" }
         '500': { $ref: "#/components/responses/InternalServerError" }
   
-  /users/{username}:
+  /users/{userId}:
     parameters:
-      - $ref: "#/components/parameters/Username"
+      - $ref: "#/components/parameters/UserID"
       
     get:
       tags: ["search users"]
       summary: Get user profile
-      description: Retrieve details of a specific user's profile. Even autheticated user's
+      description: Retrieve details of a specific user's profile. Even yourself
       operationId: getUserProfile
       
       responses:
@@ -333,7 +323,9 @@ paths:
         '500': { $ref: "#/components/responses/InternalServerError" }
 
 
-  /photos:
+  /users/{userId}/stream:
+    parameters:
+      - $ref: "#/components/parameters/UserID"
     get:
       tags: ["stream"]
       summary: Get a stream of photos
@@ -357,9 +349,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Photo"
+                $ref: "#/components/schemas/Photos"
         
         '400': { $ref: "#/components/responses/BadRequest" }
         '401': { $ref: "#/components/responses/Unauthorized" }
@@ -431,7 +421,7 @@ paths:
   /photos/{photoId}/comment:
     parameters:
       - $ref: "#/components/parameters/PhotoID"
-      
+
     get:
       tags: ["comments"]
       summary: Get comments
@@ -451,7 +441,7 @@ paths:
         '400': { $ref: "#/components/responses/BadRequest" }
         '401': { $ref: "#/components/responses/Unauthorized" }
         '500': { $ref: "#/components/responses/InternalServerError" }
-                  
+  
     post:
       tags: ["comments"]
       summary: Add a comment to a photo
@@ -475,11 +465,7 @@ paths:
   /photos/{photoId}/comment/{commentId}:
     parameters:
       - $ref: "#/components/parameters/PhotoID"
-      - name: commentId
-        in: path
-        required: true
-        schema:
-          $ref: "#/components/schemas/UniqueID"
+      - $ref: "#/components/parameters/CommentID"
       
     delete:
       tags: ["comments"]
@@ -519,6 +505,14 @@ components:
       in: path
       required: true
       description: Photo ID
+      
+    CommentID:
+      schema:
+        $ref: "#/components/schemas/UniqueID"
+      name: commentId
+      in: path
+      required: true
+      description: Comment ID
     
     UserID:
       schema:
@@ -527,12 +521,21 @@ components:
       in: path
       required: true
       description: User ID
+    
+    OtherUserID:
+      schema:
+        $ref: "#/components/schemas/UniqueID"
+      name: otherUserId
+      in: path
+      required: true
+      description: User ID
+    
       
     Username:
       schema:
         $ref: "#/components/schemas/Username"
       name: username
-      in: path
+      in: query
       required: true
       description: Username
       
@@ -568,13 +571,12 @@ components:
       minLength: 3
       maxLength: 32 
     
-    ImageURL:
+    RawPhoto:
       description: URL of an image
       type: string
-      minLength: 10
-      maxLength: 256
+      format: binary
       readOnly: true
-      example: "https://example.com/photo1.jpg"
+      example: 01001010
       
     Timestamp:
       description: Date and time representation
@@ -593,41 +595,52 @@ components:
       readOnly: true
     
     User:
-      description: a user profile containg username, amount of photos, followers and followings
+      description: a user profile containg username, photos, followers and followings
       type: object
       properties:
         userID: 
           $ref: "#/components/schemas/UniqueID"
         username: 
           $ref: "#/components/schemas/Username"
-        totalPhotos:
-          $ref: "#/components/schemas/Amount"
-        follwersAmount:
-          $ref: "#/components/schemas/Amount"
-        follwingsAmount:
-          $ref: "#/components/schemas/Amount"
+        photos:
+          $ref: "#/components/schemas/Photos"
+        followers:
+          $ref: "#/components/schemas/Users"
+        followings:
+          $ref: "#/components/schemas/Users"
+          
+    Users:
+      description: List of users
+      type: array
+      items:
+        $ref: "#/components/schemas/User"
       
     Photo:
       description: | 
-        A photo exists in a separate server or a website such as example.com.
         Once a stream of photos or a photo is requested they should be requested by a 
         host via GET method. 
 
       type: object
       properties:
-        PhotoID: 
+        photoID: 
           $ref: "#/components/schemas/UniqueID"
         author: 
           $ref: "#/components/schemas/Username"
-        imageUrl: 
-          $ref: "#/components/schemas/ImageURL"
+        rawPhoto: 
+          $ref: "#/components/schemas/RawPhoto"
         timestamp:
           $ref: "#/components/schemas/Timestamp"
         likesAmount:
           $ref: "#/components/schemas/Amount"
-        commentsAmount:
-          $ref: "#/components/schemas/Amount"
+        comments:
+          $ref: "#/components/schemas/Comments"
           
+    Photos:
+      description: list of photos
+      type: array
+      items:
+        $ref: "#/components/schemas/Photo"
+      
     Comment:
       description: Representation of a single comment
       type: object
@@ -643,3 +656,10 @@ components:
           example: "You look good, my man :)"
       required:
         - commentText  
+        
+    Comments:
+      description: list of comments
+      type: array
+      items:
+        $ref: "#/components/schemas/Comment"
+        
