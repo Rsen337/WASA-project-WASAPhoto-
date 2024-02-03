@@ -34,15 +34,63 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"time"
 )
 
 // AppDatabase is the high level interface for the DB
 type AppDatabase interface {
-	GetName() (string, error)
-	SetName(name string) error
 
 	// Register or log in user
-	DoLogin(token string) (string, error)
+	DoLogin(token string) (string, bool, error)
+	UserExists(userId string) (bool, error)
+
+	// Username
+	SetMyUsername(userId string, newUsername string) error
+	UsernameIsSame(userId string, username string) (bool, error)
+	UsernameIsTaken(userId string, username string) (bool, error)
+	GetUsername(userId string) (string, error)
+
+	// My photos
+	GetUserPhotos(userId string, page int) ([]string, error)
+	UploadPhoto(photoId string, userId string) error
+	DeletePhoto(photId string) error
+
+	// Photos
+	GetPhoto(photoId string) (string, time.Time, error)
+	GetPhotoLikes(photoId string) (int, error)
+	GetPhotoComments(photoId string) ([]Comment, error)
+
+	// Followers
+	GetFollowers(userId string, page int) ([]User, error)
+
+	// Followings
+	GetFollowings(userId string, page int) ([]User, error)
+	FollowUser(followerId string, followeeId string) error
+	UnfollowUser(followerId string, followeeId string) error
+
+	// Banned
+	IsBanned(bannerId string, banneeId string) (bool, error)
+	GetBannedUsers(userId string, page int) ([]User, error)
+	BanUser(followerId string, followeeId string) error
+	UnbanUser(followerId string, followeeId string) error
+
+	// Search users
+	SearchUser(toSearh string, userId string, page int) ([]User, error)
+	GetUserProfile(userId string) (UserProfile, error)
+
+	// Stream
+	GetMyStream(userId string, page int) ([]Photo, error)
+
+	// Like
+	LikePhoto(photoId string, userId string) error
+	UnlikePhoto(photoId string, userId string) error
+
+	// Comment
+	CommentPhoto(photoId string, userId string, commentText string) error
+	UncommentPhoto(commentId string) error
+	IsPhotoOwner(photoId string, userId string) (bool, error)
+	CommentExists(commentId string) (bool, error)
+
 	Ping() error
 }
 
@@ -65,18 +113,53 @@ func New(db *sql.DB) (AppDatabase, error) {
 
 	// Check if table exists. If not, the database is empty, and we need to create the structure
 	var tableName string
-	err := db.QueryRow(`SELECT name FROM sqlite_master WHERE type='table' AND name='example_table';`).Scan(&tableName)
+	_, err := db.Exec(`DROP TABLE IF EXISTS example_table`)
+	err = db.QueryRow(`SELECT name FROM sqlite_master WHERE type='table' AND name='example_table';`).Scan(&tableName)
 	if errors.Is(err, sql.ErrNoRows) {
 
 		// define all the necessary tables
-		sqlStmts := [2]string{
+		sqlStmts := [7]string{
 			`CREATE TABLE IF NOT EXISTS example_table (
 				id INTEGER NOT NULL PRIMARY KEY, name TEXT
 			);`,
-
-			`CREATE TABLE IF NOT EXISTS tokens (
+			`CREATE TABLE IF NOT EXISTS users (
 				userId TEXT PRIMARY KEY,
-				token TEXT UNIQUE
+				username TEXT UNIQUE
+			);`,
+			`CREATE TABLE IF NOT EXISTS photos (
+				photoId TEXT PRIMARY KEY,
+				userId TEXT NOT NULL,
+				timestamp DATETIME NOT NULL,
+				FOREIGN KEY(userId) REFERENCES users (userId) ON DELETE CASCADE
+			);`,
+			`CREATE TABLE IF NOT EXISTS likes (
+				photoId TEXT NOT NULL,
+				userId TEXT NOT NULL,
+				PRIMARY KEY (photoId,userId),
+				FOREIGN KEY(photoId) REFERENCES photos (photoId) ON DELETE CASCADE
+			);`,
+			`CREATE TABLE IF NOT EXISTS comments (
+				commentId TEXT PRIMARY KEY,
+				photoId TEXT NOT NULL,
+				userId TEXT NOT NULL,
+				commentText TEXT NOT NULL,
+				timestamp DATETIME NOT NULL,
+				FOREIGN KEY(photoId) REFERENCES photos (photoId) ON DELETE CASCADE,
+				FOREIGN KEY(userId) REFERENCES users (userId) ON DELETE CASCADE
+			);`,
+			`CREATE TABLE IF NOT EXISTS banned (
+				bannerId TEXT NOT NULL,
+				banneeId TEXT NOT NULL,
+				PRIMARY KEY (bannerId,banneeId),
+				FOREIGN KEY(bannerId) REFERENCES users (userId) ON DELETE CASCADE,
+				FOREIGN KEY(banneeId) REFERENCES users (userId) ON DELETE CASCADE
+			);`,
+			`CREATE TABLE IF NOT EXISTS followings (
+				followerId TEXT NOT NULL,
+				followeeId TEXT NOT NULL,
+				PRIMARY KEY (followerId,followeeId),
+				FOREIGN KEY(followerId) REFERENCES users (userId) ON DELETE CASCADE,
+				FOREIGN KEY(followeeId) REFERENCES users (userId) ON DELETE CASCADE
 			);`,
 		}
 

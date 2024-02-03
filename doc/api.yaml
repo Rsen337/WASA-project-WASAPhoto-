@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: WASAPhoto API
   description: API for WASAPhoto, a webapp for sharing photos.
-  version: 3.0.0
+  version: 3.1.0
   
   
 servers:
@@ -38,7 +38,7 @@ paths:
       
       responses:
         '201':
-          description: User log-in action successful
+          description: User registered successfully
           content:
             application/json:
               schema:
@@ -46,7 +46,10 @@ paths:
                 properties:
                   identifier:
                     $ref: "#/components/schemas/UniqueID"
-                  
+        
+        '200':
+          description: User already exists
+          
         '400': { $ref: "#/components/responses/BadRequest" }
         '500': { $ref: "#/components/responses/InternalServerError" }
 
@@ -80,7 +83,10 @@ paths:
           description: Username changed successfully
           
         '204':
-          description: Username typed is the similar to the former one
+          description: Username is the similar to the former one
+
+        '409':
+          description: Username is already taken by other user
           
         '400': { $ref: "#/components/responses/BadRequest" }
         '401': { $ref: "#/components/responses/Unauthorized" }
@@ -92,6 +98,28 @@ paths:
     parameters:
       - $ref: "#/components/parameters/UserID"
       
+    get:
+      parameters:
+        - $ref: "#/components/parameters/Page"
+      tags: ["photos"]
+      summary: Get a list of user photos
+      description: Retrieve photos in reverse chronological order
+      operationId: getUserPhotos
+      
+      responses:
+        '200':
+          description: A list of photos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Photos"
+        
+        '400': { $ref: "#/components/responses/BadRequest" }
+        '401': { $ref: "#/components/responses/Unauthorized" }
+        '403': { $ref: "#/components/responses/Forbidden" }
+        '500': { $ref: "#/components/responses/InternalServerError" }
+      
+      
     post:
       tags: ["my photos"]
       summary: Upload a photo
@@ -102,13 +130,12 @@ paths:
         
       operationId: uploadPhoto
       requestBody:
-        required: true
         content:
-          image/png:
+          image/*:
             schema:
-              description: Photo to be uploaded as .png file
-              type: string
-              format: binary
+              $ref: "#/components/schemas/RawPhoto"
+        required: true
+
       responses:
         '201':
           description: Photo uploaded successfully
@@ -133,12 +160,39 @@ paths:
         '200':
           description: Photo removed successfully
         
-        '404':
+        '204':
           description: Photo not found
         
         '400': { $ref: "#/components/responses/BadRequest" }
         '401': { $ref: "#/components/responses/Unauthorized" }
         '403': { $ref: "#/components/responses/Forbidden" }
+        '500': { $ref: "#/components/responses/InternalServerError" }
+        
+        
+  /users/{userId}/followers:
+    parameters:
+      - $ref: "#/components/parameters/UserID"
+      
+    get:
+      parameters:
+        - $ref: "#/components/parameters/Page"
+      tags: ["followers"]
+      summary: Get followings
+      description: |
+        Get a list of followers(userIds) of a user in order to see any
+        particular user's details use dedicted path /users/{userId}
+      operationId: getFollowers
+      
+      responses:
+        '200':
+          description: List of user profiles 
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Users"
+          
+        '400': { $ref: "#/components/responses/BadRequest" }
+        '401': { $ref: "#/components/responses/Unauthorized" }
         '500': { $ref: "#/components/responses/InternalServerError" }
 
 
@@ -147,9 +201,13 @@ paths:
       - $ref: "#/components/parameters/UserID"
       
     get:
+      parameters:
+        - $ref: "#/components/parameters/Page"
       tags: ["followings"]
       summary: Get followings
-      description: Get a list of followings of authenticated user
+      description: |
+        Get a list of followings(userIds) of a user in order to see any
+        particular user's details use dedicted path /users/{userId}
       operationId: getFollowings
       
       responses:
@@ -158,9 +216,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/User"
+                $ref: "#/components/schemas/Users"
           
         '400': { $ref: "#/components/responses/BadRequest" }
         '401': { $ref: "#/components/responses/Unauthorized" }
@@ -196,11 +252,8 @@ paths:
       operationId: unfollowUser
       
       responses:
-        '201':
-          description: User unfollowed successfully
-        
         '200':
-          description: User already unfollowed
+          description: User unfollowed successfully
         
         '400': { $ref: "#/components/responses/BadRequest" }
         '401': { $ref: "#/components/responses/Unauthorized" }
@@ -213,9 +266,13 @@ paths:
       - $ref: "#/components/parameters/UserID"
     
     get:
+      parameters:
+        - $ref: "#/components/parameters/Page"
       tags: ["ban"]
       summary: Get banned users
-      description: Get a list of banned users of authenticated user
+      description: |
+        Get a list of banned users(userIds) of a user in order to see any
+        particular user's details use dedicted path /users/{userId}
       operationId: getBannedUsers
       
       responses:
@@ -224,9 +281,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/User"
+                $ref: "#/components/schemas/Users"
           
         '400': { $ref: "#/components/responses/BadRequest" }
         '401': { $ref: "#/components/responses/Unauthorized" }
@@ -264,9 +319,6 @@ paths:
       responses:
         '200':
           description: User unbanned successfully
-        
-        '204':
-          description: User already unbanned
           
         '400': { $ref: "#/components/responses/BadRequest" }
         '401': { $ref: "#/components/responses/Unauthorized" }
@@ -282,6 +334,7 @@ paths:
       operationId: searchUser
       parameters:
         - $ref: "#/components/parameters/Username"
+        - $ref: "#/components/parameters/Page"
       responses:
         '200':
           description: List of matching user profiles
@@ -290,7 +343,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Users"
         
-        '404':
+        '204':
           description: No matches have been found
           
         '400': { $ref: "#/components/responses/BadRequest" }
@@ -326,22 +379,12 @@ paths:
   /users/{userId}/stream:
     parameters:
       - $ref: "#/components/parameters/UserID"
+      - $ref: "#/components/parameters/Page"
     get:
       tags: ["stream"]
       summary: Get a stream of photos
       description: Retrieve photos in reverse chronological order from followed users.
       operationId: getMyStream
-      parameters:
-        - name: page
-          in: query
-          required: true
-          description: |
-            The next nth range (0-10) of photos retrieved in reverse choronological
-            order.
-          schema:
-            type: integer
-            minimum: 1
-            example: 1
       
       responses:
         '200':
@@ -349,7 +392,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Photos"
+                type: array
+                items:
+                  $ref: "#/components/schemas/Photo"
         
         '400': { $ref: "#/components/responses/BadRequest" }
         '401': { $ref: "#/components/responses/Unauthorized" }
@@ -360,9 +405,32 @@ paths:
       - $ref: "#/components/parameters/PhotoID"
     get:
       tags: ["stream"]
+      summary: Get the photo itself
+      description: Get the pecific photo itself.
+      operationId: getPhoto
+      responses:
+        '200':
+          description: Details of the photo
+          content:
+            image/*:
+              schema:
+                $ref: "#/components/schemas/RawPhoto"
+        
+        '204':
+          description: Photo not found
+        
+        '400': { $ref: "#/components/responses/BadRequest" }
+        '401': { $ref: "#/components/responses/Unauthorized" }
+        '500': { $ref: "#/components/responses/InternalServerError" }
+  
+  /photos/{photoId}/details:
+    parameters:
+      - $ref: "#/components/parameters/PhotoID"
+    get:
+      tags: ["stream"]
       summary: Get details of a specific photo
       description: Retrieve details of a specific photo.
-      operationId: getPhoto
+      operationId: getPhotoDetails
       responses:
         '200':
           description: Details of the photo
@@ -371,7 +439,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Photo"
         
-        '404':
+        '204':
           description: Photo not found
         
         '400': { $ref: "#/components/responses/BadRequest" }
@@ -390,10 +458,10 @@ paths:
       description: Like a specific photo.
       operationId: likePhoto
       responses:
-        '200':
+        '201':
           description: Photo liked successfully
           
-        '204':
+        '200':
           description: Photo already liked
           
         '400': { $ref: "#/components/responses/BadRequest" }
@@ -409,9 +477,6 @@ paths:
       responses:
         '200':
           description: Photo unliked successfully
-          
-        '204':
-          description: Photo already unliked
           
         '400': { $ref: "#/components/responses/BadRequest" }
         '401': { $ref: "#/components/responses/Unauthorized" }
@@ -530,7 +595,6 @@ components:
       required: true
       description: User ID
     
-      
     Username:
       schema:
         $ref: "#/components/schemas/Username"
@@ -538,6 +602,19 @@ components:
       in: query
       required: true
       description: Username
+
+    Page:
+      name: page
+      in: query
+      required: false
+      description: |
+        The page number for paginating through the data. Each page contains a set number of items of interest.
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+        example: 1
+
       
       
   responses:
@@ -556,7 +633,7 @@ components:
       
   schemas:
     UniqueID:
-      description: UniqueID for any object needed
+      description: UUID for any object needed
       type: string
       pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
       minLength: 36
@@ -572,11 +649,14 @@ components:
       maxLength: 32 
     
     RawPhoto:
-      description: URL of an image
-      type: string
-      format: binary
-      readOnly: true
-      example: 01001010
+      description: binary of an image
+      type: object
+      properties:
+        photoBinary:
+          type: string
+          minLength: 0
+          format: binary
+          example: "010010101"
       
     Timestamp:
       description: Date and time representation
@@ -603,17 +683,24 @@ components:
         username: 
           $ref: "#/components/schemas/Username"
         photos:
-          $ref: "#/components/schemas/Photos"
+          $ref: "#/components/schemas/Amount"
         followers:
-          $ref: "#/components/schemas/Users"
+          $ref: "#/components/schemas/Amount"
         followings:
-          $ref: "#/components/schemas/Users"
+          $ref: "#/components/schemas/Amount"
           
     Users:
-      description: List of users
+      description: Paginated list of users
       type: array
+      minItems: 1
+      maxItems: 25
       items:
-        $ref: "#/components/schemas/User"
+        type: object
+        properties:
+          userId:
+            $ref: "#/components/schemas/User/properties/userID"
+          username:
+            $ref: "#/components/schemas/User/properties/username"
       
     Photo:
       description: | 
@@ -625,9 +712,7 @@ components:
         photoID: 
           $ref: "#/components/schemas/UniqueID"
         author: 
-          $ref: "#/components/schemas/Username"
-        rawPhoto: 
-          $ref: "#/components/schemas/RawPhoto"
+          $ref: "#/components/schemas/UniqueID"
         timestamp:
           $ref: "#/components/schemas/Timestamp"
         likesAmount:
@@ -636,10 +721,14 @@ components:
           $ref: "#/components/schemas/Comments"
           
     Photos:
-      description: list of photos
+      description: |
+        paginated list of photo ids from which you can retrieve 
+        a particular photo using /photos/{photoID} endpoint
       type: array
+      minItems: 1
+      maxItems: 10
       items:
-        $ref: "#/components/schemas/Photo"
+        $ref: "#/components/schemas/Photo/properties/photoID"
       
     Comment:
       description: Representation of a single comment
@@ -648,7 +737,7 @@ components:
         commentID:
           $ref: "#/components/schemas/UniqueID"
         author: 
-          $ref: "#/components/schemas/Username"
+          $ref: "#/components/schemas/UniqueID"
         timestamp:
           $ref: "#/components/schemas/Timestamp"
         commentText:
@@ -658,8 +747,10 @@ components:
         - commentText  
         
     Comments:
-      description: list of comments
+      description: paginated list of comments
       type: array
+      minItems: 1
+      maxItems: 25
       items:
         $ref: "#/components/schemas/Comment"
         

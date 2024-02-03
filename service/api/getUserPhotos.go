@@ -2,23 +2,39 @@ package api
 
 import (
 	"encoding/json"
-	"github.com/Rsen337/WASA-project-WASAPhoto-/service/api/reqcontext"
-	"github.com/julienschmidt/httprouter"
 	"net/http"
 	"strconv"
+
+	"github.com/Rsen337/WASA-project-WASAPhoto-/service/api/reqcontext"
+	"github.com/julienschmidt/httprouter"
 )
 
-func (rt *_router) getMyStream(w http.ResponseWriter, r *http.Request, ps httprouter.Params, ctx reqcontext.RequestContext) {
+// returns ids of all the photos that belong to the athenticated user
+func (rt *_router) getUserPhotos(w http.ResponseWriter, r *http.Request, ps httprouter.Params, ctx reqcontext.RequestContext) {
+
 	w.Header().Set("Content-Type", "application/json")
 
 	userId := ps.ByName("userId")
 
 	// check if the user authorized and authenticated
 	reqId := getToken(r.Header.Get("Authorization"))
-	valid := rt.isAuthorized(userId, reqId)
+	valid := rt.isAuthorized(reqId, reqId)
 	if valid != 0 {
 		ctx.Logger.Info("uploadPhoto: isAuthorized isn't happy")
 		w.WriteHeader(valid)
+		return
+	}
+
+	// checks if the requesting user is banned
+	isBanned, err := rt.db.IsBanned(userId, reqId)
+	if err != nil {
+		ctx.Logger.WithError(err).Error("IsBanned returns error")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	if isBanned {
+		w.WriteHeader(http.StatusForbidden)
+		ctx.Logger.Info("is banned")
 		return
 	}
 
@@ -31,16 +47,18 @@ func (rt *_router) getMyStream(w http.ResponseWriter, r *http.Request, ps httpro
 		page = 1
 	}
 
-	photos, err := rt.db.GetMyStream(userId, page)
+	var photoIds []string
+
+	photoIds, err = rt.db.GetUserPhotos(userId, page)
 	if err != nil {
-		ctx.Logger.WithError(err).Error("rt.db.GetMyStream returned an error")
+		ctx.Logger.WithError(err).Error("rt.db.getUserPhotos returned an error")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	// Convert photo IDs to JSON and write response
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(photos); err != nil {
+	if err := json.NewEncoder(w).Encode(photoIds); err != nil {
 		ctx.Logger.WithError(err).Error("Error encoding JSON")
 		w.WriteHeader(http.StatusInternalServerError)
 		return

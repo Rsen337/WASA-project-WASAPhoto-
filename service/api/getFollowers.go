@@ -9,11 +9,9 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-func (rt *_router) searchUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params, ctx reqcontext.RequestContext) {
-
+func (rt *_router) getFollowers(w http.ResponseWriter, r *http.Request, ps httprouter.Params, ctx reqcontext.RequestContext) {
+	userId := ps.ByName("userId")
 	// Parse the page query parameter from the request URL
-	toSearch := r.URL.Query().Get("username")
-
 	pageStr := r.URL.Query().Get("page")
 	page, err := strconv.Atoi(pageStr)
 	if err != nil || page <= 0 {
@@ -22,31 +20,38 @@ func (rt *_router) searchUser(w http.ResponseWriter, r *http.Request, ps httprou
 		page = 1
 	}
 
-	// check if the user authorized and authenticated to change his username
-	userId := getToken(r.Header.Get("Authorization"))
-	valid := rt.isAuthorized(userId, userId)
+	// check if the user authorized and authenticated
+	reqId := getToken(r.Header.Get("Authorization"))
+	valid := rt.isAuthorized(reqId, reqId)
 	if valid != 0 {
 		ctx.Logger.Info("uploadPhoto: isAuthorized isn't happy")
 		w.WriteHeader(valid)
 		return
 	}
 
-	// get matching results
-	users, err := rt.db.SearchUser(toSearch, userId, page)
+	// checks if the requesting user is banned
+	isBanned, err := rt.db.IsBanned(userId, reqId)
 	if err != nil {
+		ctx.Logger.WithError(err).Error("IsBanned returns error")
 		w.WriteHeader(http.StatusInternalServerError)
-		ctx.Logger.WithError(err).Error("SeachUser returns an error")
 		return
 	}
-	if len(users) == 0 {
-		w.WriteHeader(http.StatusNoContent)
-		ctx.Logger.Info("no matching users")
+	if isBanned {
+		w.WriteHeader(http.StatusForbidden)
+		ctx.Logger.Info("is banned")
 		return
 	}
 
-	// send the list to the client
+	followings, err := rt.db.GetFollowers(userId, page)
+	if err != nil {
+		ctx.Logger.WithError(err).Error("GetFollowers returns error")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	// Convert photo IDs to JSON and write response
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(users); err != nil {
+	if err := json.NewEncoder(w).Encode(followings); err != nil {
 		ctx.Logger.WithError(err).Error("Error encoding JSON")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
