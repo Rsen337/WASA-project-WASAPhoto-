@@ -5,7 +5,8 @@ import (
 	"time"
 )
 
-func (db appdbimpl) CommentPhoto(photoId string, userId string, commentText string) error {
+// CommentPhoto inserts a comment for a photo into the database.
+func (db appdbimpl) CommentPhoto(photoID, userID, commentText string) error {
 	// Prepare the SQL statement
 	query := "INSERT INTO comments (commentId, photoId, userId, commentText, timestamp) VALUES (?, ?, ?, ?, ?)"
 	stmt, err := db.c.Prepare(query)
@@ -15,13 +16,13 @@ func (db appdbimpl) CommentPhoto(photoId string, userId string, commentText stri
 	defer stmt.Close()
 
 	// Generate a unique comment ID
-	commentId := uuid.New().String()
+	commentID := uuid.New().String()
 
 	// Get the current timestamp
 	timestamp := time.Now()
 
 	// Execute the SQL statement to insert the comment
-	_, err = stmt.Exec(commentId, photoId, userId, commentText, timestamp)
+	_, err = stmt.Exec(commentID, photoID, userID, commentText, timestamp)
 	if err != nil {
 		return err
 	}
@@ -29,7 +30,8 @@ func (db appdbimpl) CommentPhoto(photoId string, userId string, commentText stri
 	return nil
 }
 
-func (db appdbimpl) UncommentPhoto(commentId string) error {
+// UncommentPhoto deletes a comment from the database.
+func (db appdbimpl) UncommentPhoto(commentID string) error {
 	// Prepare the SQL statement
 	query := "DELETE FROM comments WHERE commentId = ?"
 	stmt, err := db.c.Prepare(query)
@@ -39,7 +41,7 @@ func (db appdbimpl) UncommentPhoto(commentId string) error {
 	defer stmt.Close()
 
 	// Execute the SQL statement to delete the comment
-	_, err = stmt.Exec(commentId)
+	_, err = stmt.Exec(commentID)
 	if err != nil {
 		return err
 	}
@@ -47,8 +49,10 @@ func (db appdbimpl) UncommentPhoto(commentId string) error {
 	return nil
 }
 
-// returns false also if photo doesn't exist
-func (db appdbimpl) IsPhotoOwner(photoId string, userId string) (bool, error) {
+// IsPhotoOwner checks if a user is the owner of a photo.
+// It returns true if the user is the owner, false otherwise.
+// It also returns an error if there was a problem executing the query.
+func (db appdbimpl) IsPhotoOwner(photoID, userID string) (bool, error) {
 
 	// Prepare the SQL query
 	query := "SELECT EXISTS(SELECT 1 FROM photos WHERE photoId = ? AND userId = ?)"
@@ -60,7 +64,7 @@ func (db appdbimpl) IsPhotoOwner(photoId string, userId string) (bool, error) {
 
 	// Execute the SQL query
 	var exists bool
-	err = stmt.QueryRow(photoId, userId).Scan(&exists)
+	err = stmt.QueryRow(photoID, userID).Scan(&exists)
 	if err != nil {
 		return false, err
 	}
@@ -68,7 +72,10 @@ func (db appdbimpl) IsPhotoOwner(photoId string, userId string) (bool, error) {
 	return exists, nil
 }
 
-func (db appdbimpl) CommentExists(commentId string) (bool, error) {
+// CommentExists checks if a comment exists in the database.
+// It returns true if the comment exists, false otherwise.
+// It also returns an error if there was a problem executing the query.
+func (db appdbimpl) CommentExists(commentID string) (bool, error) {
 	// Prepare the SQL query to check if the comment exists
 	query := "SELECT EXISTS(SELECT 1 FROM comments WHERE commentId = ?)"
 	stmt, err := db.c.Prepare(query)
@@ -79,7 +86,7 @@ func (db appdbimpl) CommentExists(commentId string) (bool, error) {
 
 	// Execute the SQL query and scan the result into a boolean variable
 	var exists bool
-	err = stmt.QueryRow(commentId).Scan(&exists)
+	err = stmt.QueryRow(commentID).Scan(&exists)
 	if err != nil {
 		return false, err
 	}

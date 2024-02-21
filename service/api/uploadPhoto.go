@@ -12,72 +12,78 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-// returns ids of all the photos that belong to the athenticated user
+// uploadPhoto handles the upload of a photo for the authenticated user.
 func (rt *_router) uploadPhoto(w http.ResponseWriter, r *http.Request, ps httprouter.Params, ctx reqcontext.RequestContext) {
-
-	// w.Header().Set("Content-Type", "application/json")
-
+	// Get the user ID from the URL parameter
 	userId := ps.ByName("userId")
 
-	// check if the user authorized and authenticated to change his username
+	// Check if the user is authorized and authenticated to upload a photo
 	valid := rt.isAuthorized(userId, getToken(r.Header.Get("Authorization")))
 	if valid != 0 {
-		ctx.Logger.Info("uploadPhoto: isAuthorized isn't happy")
-		w.WriteHeader(valid)
+		ctx.Logger.Info("uploadPhoto: user is not authorized")
+		// w.WriteHeader(valid)
+		writeResponse(w, valid, "")
 		return
 	}
 
-	// Create a copy of the body
+	// Read the request body
 	data, err := io.ReadAll(r.Body)
 	if err != nil {
-		ctx.Logger.WithError(err).Error("uploadPhoto: error reading body content")
-		w.WriteHeader(http.StatusInternalServerError)
+		ctx.Logger.WithError(err).Error("uploadPhoto: error reading request body")
+		// w.WriteHeader(http.StatusInternalServerError)
+		writeResponse(w, http.StatusInternalServerError, "")
 		return
 	}
 
-	// Detect the content type
+	// Detect the content type of the photo
 	contentType := http.DetectContentType(data)
 
 	// Check if the content type indicates a JPEG file
 	if contentType == "image/jpeg" {
-		ctx.Logger.Info("it is jpeg")
+		ctx.Logger.Info("uploadPhoto: photo is in JPEG format")
 	} else if contentType == "image/png" {
-		ctx.Logger.Info("it is png")
+		ctx.Logger.Info("uploadPhoto: photo is in PNG format")
 	} else {
-		ctx.Logger.Info("it is not jpeg nor png")
+		ctx.Logger.Info("uploadPhoto: photo is not in JPEG nor PNG format")
+		writeResponse(w, http.StatusBadRequest, "Invalid photo format")
+		return
 	}
 
+	// Replace the request body with a new buffer containing the photo data
 	r.Body = io.NopCloser(bytes.NewBuffer(data))
 
 	// Generate a unique photo ID
 	photoId := uuid.New().String()
 
-	// Create an empty file for storing the body content (image)
+	// Create a new file for storing the photo
 	out, err := os.Create(filepath.Join(photoFolder, userId, photoId))
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		// w.WriteHeader(http.StatusInternalServerError)
+		writeResponse(w, http.StatusInternalServerError, "")
 		ctx.Logger.WithError(err).Error("uploadPhoto: error creating local photo file")
 		return
 	}
+	defer out.Close()
 
-	// Copy body content to the previously created file
+	// Copy the photo data to the file
 	_, err = io.Copy(out, r.Body)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		ctx.Logger.WithError(err).Error("uploadPhoto: error copying body content into file photo")
+		// w.WriteHeader(http.StatusInternalServerError)
+		writeResponse(w, http.StatusInternalServerError, "")
+		ctx.Logger.WithError(err).Error("uploadPhoto: error copying photo data to file")
 		return
 	}
 
-	// Close the created file
-	out.Close()
-
+	// Upload the photo ID and user ID to the database
 	err = rt.db.UploadPhoto(photoId, userId)
 	if err != nil {
-		ctx.Logger.WithError(err).Error("rt.db.UploadPhoto returns error")
-		w.WriteHeader(http.StatusInternalServerError)
+		ctx.Logger.WithError(err).Error("uploadPhoto: error uploading photo to database")
+		// w.WriteHeader(http.StatusInternalServerError)
+		writeResponse(w, http.StatusInternalServerError, "")
 		return
 	}
-	// Respond with success message
-	w.WriteHeader(http.StatusCreated)
 
+	// Respond with success status code
+	// w.WriteHeader(http.StatusCreated)
+	writeResponse(w, http.StatusCreated, "")
 }

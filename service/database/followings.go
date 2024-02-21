@@ -2,13 +2,14 @@ package database
 
 import "database/sql"
 
-// if page == 0 then returns the whole list without pagination
+// GetFollowings retrieves the list of followings for a given user.
+// If page is 0, it returns the whole list without pagination.
 func (db appdbimpl) GetFollowings(userId string, page int) ([]User, error) {
 
-	// PageSize is the number of photos per page
+	// PageSize is the number of followings per page
 	const PageSize int = 50
 
-	// Define the SQL query to fetch photo IDs for the specified user with pagination
+	// Define the SQL query to fetch followee IDs for the specified user with pagination
 	offset := (page - 1) * PageSize
 
 	// Prepare the SQL query
@@ -32,7 +33,7 @@ func (db appdbimpl) GetFollowings(userId string, page int) ([]User, error) {
 
 	var followings []User
 
-	// Iterate over the rows and scan the result into Comment structs
+	// Iterate over the rows and scan the result into User structs
 	for rows.Next() {
 
 		var followee User
@@ -43,6 +44,9 @@ func (db appdbimpl) GetFollowings(userId string, page int) ([]User, error) {
 		}
 
 		followee.Username, err = db.GetUsername(followee.UserID)
+		if err != nil {
+			return nil, err
+		}
 
 		followings = append(followings, followee)
 	}
@@ -55,9 +59,9 @@ func (db appdbimpl) GetFollowings(userId string, page int) ([]User, error) {
 	return followings, nil
 }
 
+// FollowUser adds a new following relationship between a follower and a followee.
 func (db appdbimpl) FollowUser(followerId string, followeeId string) error {
 	// Prepare the SQL query
-
 	query := "INSERT INTO followings (followerId, followeeId) VALUES (?, ?)"
 	stmt, err := db.c.Prepare(query)
 	if err != nil {
@@ -74,6 +78,7 @@ func (db appdbimpl) FollowUser(followerId string, followeeId string) error {
 	return nil
 }
 
+// UnfollowUser removes a following relationship between a follower and a followee.
 func (db appdbimpl) UnfollowUser(followerId string, followeeId string) error {
 	// Prepare the SQL query
 	query := "DELETE FROM followings WHERE followerId = ? AND followeeId = ?"
@@ -92,12 +97,13 @@ func (db appdbimpl) UnfollowUser(followerId string, followeeId string) error {
 	return nil
 }
 
+// GetFollowers retrieves the list of followers for a given user.
 func (db appdbimpl) GetFollowers(userId string, page int) ([]User, error) {
 
-	// PageSize is the number of photos per page
+	// PageSize is the number of followers per page
 	const PageSize int = 50
 
-	// Define the SQL query to fetch photo IDs for the specified user with pagination
+	// Define the SQL query to fetch follower IDs for the specified user with pagination
 	offset := (page - 1) * PageSize
 
 	// Prepare the SQL query
@@ -110,7 +116,7 @@ func (db appdbimpl) GetFollowers(userId string, page int) ([]User, error) {
 
 	var followers []User
 
-	// Iterate over the rows and scan the result into Comment structs
+	// Iterate over the rows and scan the result into User structs
 	for rows.Next() {
 
 		var follower User
@@ -122,7 +128,7 @@ func (db appdbimpl) GetFollowers(userId string, page int) ([]User, error) {
 
 		follower.Username, err = db.GetUsername(follower.UserID)
 		if err != nil {
-			return []User{}, err
+			return nil, err
 		}
 
 		followers = append(followers, follower)

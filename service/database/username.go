@@ -1,30 +1,30 @@
 package database
 
-// function that chagnes the username to new one. If the username is similar to the old one, then it returns false, otherwise true
+// SetMyUsername changes the username associated with the given userId.
+// If the new username is similar to the old one, it returns an error.
+// Otherwise, it updates the username and returns nil.
 func (db *appdbimpl) SetMyUsername(userId string, newUsername string) error {
-
-	// update username associated to the userId
 	_, err := db.c.Exec("UPDATE users SET username = ? WHERE userId = ?", newUsername, userId)
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
 
-// checks whether the username is similar to the old one
+// UsernameIsSame checks whether the given username is similar to the old username associated with the userId.
+// It returns true if the usernames are the same, false otherwise.
 func (db *appdbimpl) UsernameIsSame(userId string, username string) (bool, error) {
 	var oldUsername string
 	err := db.c.QueryRow("SELECT username FROM users WHERE userId = ?", userId).Scan(&oldUsername)
 	if err != nil {
 		return false, err
 	}
-
 	return username == oldUsername, nil
 }
 
-// checks whether the username is already taken by some other user
-// it assumes that we ran UsernameIsSame first
+// UsernameIsTaken checks whether the given username is already taken by another user.
+// It assumes that UsernameIsSame has been called first to ensure the username is not similar to the old one.
+// It returns true if the username is taken, false otherwise.
 func (db *appdbimpl) UsernameIsTaken(userId string, username string) (bool, error) {
 	var count int
 	err := db.c.QueryRow("SELECT COUNT(*) FROM users WHERE username = ?", username).Scan(&count)
@@ -34,6 +34,8 @@ func (db *appdbimpl) UsernameIsTaken(userId string, username string) (bool, erro
 	return count > 0, nil
 }
 
+// GetUsername retrieves the username associated with the given userId.
+// It returns the username and any error encountered during the retrieval.
 func (db appdbimpl) GetUsername(userId string) (string, error) {
 	var username string
 	err := db.c.QueryRow("SELECT username FROM users WHERE userId = ?", userId).Scan(&username)

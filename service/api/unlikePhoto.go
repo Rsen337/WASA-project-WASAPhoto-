@@ -6,26 +6,26 @@ import (
 	"net/http"
 )
 
+// unlikePhoto handles the unlike photo request.
 func (rt *_router) unlikePhoto(w http.ResponseWriter, r *http.Request, ps httprouter.Params, ctx reqcontext.RequestContext) {
+	photoID := ps.ByName("photoId")
+	userID := ps.ByName("userId")
 
-	photoId := ps.ByName("photoId")
-	userId := ps.ByName("userId")
-
-	// check if the user authorized and authenticated
-	reqId := getToken(r.Header.Get("Authorization"))
-	valid := rt.isAuthorized(userId, reqId)
-	if valid != 0 {
-		ctx.Logger.Info("uploadPhoto: isAuthorized isn't happy")
-		w.WriteHeader(valid)
+	// Check if the user is authorized and authenticated.
+	reqID := getToken(r.Header.Get("Authorization"))
+	isValid := rt.isAuthorized(userID, reqID)
+	if isValid != 0 {
+		ctx.Logger.Info("unlikePhoto: User is not authorized")
+		writeResponse(w, isValid, "")
 		return
 	}
 
-	err := rt.db.UnlikePhoto(photoId, userId)
+	err := rt.db.UnlikePhoto(photoID, userID)
 	if err != nil {
-		ctx.Logger.WithError(err).Error("UnlikePhoto returns error")
-		w.WriteHeader(http.StatusInternalServerError)
+		ctx.Logger.WithError(err).Error("unlikePhoto: Failed to unlike photo")
+		writeResponse(w, http.StatusInternalServerError, "")
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	writeResponse(w, http.StatusOK, "Photo unliked successfully")
 }

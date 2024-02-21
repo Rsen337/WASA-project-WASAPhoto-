@@ -3,20 +3,22 @@ package api
 import (
 	"encoding/json"
 	"net/http"
+	"os"
 	"path/filepath"
+	"strconv"
 
 	"github.com/Rsen337/WASA-project-WASAPhoto-/service/api/reqcontext"
 	"github.com/Rsen337/WASA-project-WASAPhoto-/service/database"
 	"github.com/julienschmidt/httprouter"
 )
 
-// get a specific photo searched up by the photoId
+// getPhoto retrieves a specific photo searched by the photoId.
 func (rt *_router) getPhoto(w http.ResponseWriter, r *http.Request, ps httprouter.Params, ctx reqcontext.RequestContext) {
-
+	// Check if the request is authorized.
 	valid := rt.isAuthorized(getToken(r.Header.Get("Authorization")), getToken(r.Header.Get("Authorization")))
 	if valid != 0 {
-		ctx.Logger.Info("uploadPhoto: isAuthorized isn't happy")
-		w.WriteHeader(valid)
+		ctx.Logger.Info("getPhoto: Unauthorized request")
+		writeResponse(w, valid, "")
 		return
 	}
 
@@ -24,24 +26,46 @@ func (rt *_router) getPhoto(w http.ResponseWriter, r *http.Request, ps httproute
 
 	userId, _, err := rt.db.GetPhoto(photoId)
 	if err != nil {
-		// the requested photo doesn't exist
+		// The requested photo doesn't exist.
 		w.WriteHeader(http.StatusNoContent)
-		ctx.Logger.WithError(err).Error("GetPhotoDetails retuns an error")
+		ctx.Logger.WithError(err).Error("getPhoto: GetPhotoDetails returns an error")
 		return
 	}
 
-	http.ServeFile(w, r,
-		filepath.Join(photoFolder, userId, photoId))
+	photoPath := filepath.Join(photoFolder, userId, photoId)
+
+	// Open the photo file
+	file, err := os.Open(photoPath)
+	if err != nil {
+		writeResponse(w, http.StatusInternalServerError, "")
+		ctx.Logger.WithError(err).Error("getPhoto: Failed to open photo file")
+		return
+	}
+	defer file.Close()
+
+	// Get the file information
+	fileInfo, err := file.Stat()
+	if err != nil {
+		writeResponse(w, http.StatusInternalServerError, "")
+		ctx.Logger.WithError(err).Error("getPhoto: Failed to get file information")
+		return
+	}
+
+	// Set the response headers
+	w.Header().Set("Content-Type", "image/jpeg")
+	w.Header().Set("Content-Length", strconv.FormatInt(fileInfo.Size(), 10))
+
+	// Serve the file content
+	http.ServeContent(w, r, photoId, fileInfo.ModTime(), file)
 }
 
-// get details of a specific photo searched up by the photoId
+// getPhotoDetails retrieves details of a specific photo searched by the photoId.
 func (rt *_router) getPhotoDetails(w http.ResponseWriter, r *http.Request, ps httprouter.Params, ctx reqcontext.RequestContext) {
-
-	// check if the user authorized and authenticated to change his username
+	// Check if the request is authorized.
 	valid := rt.isAuthorized(getToken(r.Header.Get("Authorization")), getToken(r.Header.Get("Authorization")))
 	if valid != 0 {
-		ctx.Logger.Info("uploadPhoto: isAuthorized isn't happy")
-		w.WriteHeader(valid)
+		ctx.Logger.Info("getPhotoDetails: Unauthorized request")
+		writeResponse(w, valid, "")
 		return
 	}
 
@@ -49,15 +73,25 @@ func (rt *_router) getPhotoDetails(w http.ResponseWriter, r *http.Request, ps ht
 
 	userId, timestamp, err := rt.db.GetPhoto(photoId)
 	if err != nil {
-		// the requested photo doesn't exist
+		// The requested photo doesn't exist.
 		w.WriteHeader(http.StatusNoContent)
-		ctx.Logger.WithError(err).Error("GetPhotoDetails retuns an error")
+		ctx.Logger.WithError(err).Error("getPhotoDetails: GetPhotoDetails returns an error")
 		return
 	}
 
 	likesAmount, err := rt.db.GetPhotoLikes(photoId)
+	if err != nil {
+		writeResponse(w, http.StatusInternalServerError, "")
+		ctx.Logger.WithError(err).Error("getPhotoDetails: GetPhotoLikes returns an error")
+		return
+	}
 
-	comments, err := rt.db.GetPhotoComments(photoId)
+	comments, err := rt.db.GetPhotoComments(photoId, 1)
+	if err != nil {
+		writeResponse(w, http.StatusInternalServerError, "")
+		ctx.Logger.WithError(err).Error("getPhotoDetails: GetPhotoComments returns an error")
+		return
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 
@@ -70,8 +104,8 @@ func (rt *_router) getPhotoDetails(w http.ResponseWriter, r *http.Request, ps ht
 	}
 	err = json.NewEncoder(w).Encode(photo)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		ctx.Logger.WithError(err).Error("session: can't create response json")
+		writeResponse(w, http.StatusInternalServerError, "Error encoding JSON")
+		ctx.Logger.WithError(err).Error("getPhotoDetails: Can't create response JSON")
 		return
 	}
 }

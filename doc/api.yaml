@@ -2,7 +2,32 @@ openapi: 3.0.3
 info:
   title: WASAPhoto API
   description: API for WASAPhoto, a webapp for sharing photos.
-  version: 3.1.0
+  version: 3.2.0
+  
+tags:
+  - name: "login"
+    description: Endpoint that manages the login
+  - name: "change username"
+    description: Endpoint that manages username  
+  - name: "my photos"
+    description: Endpoint that manages my photos
+  - name: "followers"
+    description: Endpoint that manages followers
+  - name: "followings"
+    description: Endpoint that manages followings
+  - name: "ban"
+    description: Endpoint that manages banned users
+  - name: "search users"
+    description: Endpoint that manages search
+  - name: "stream"
+    description: Endpoint that manages stream
+  - name: "likes"
+    description: Endpoint that manages likes
+  - name: "comments"
+    description: Endpoint that manages comments
+  - name: "photos"
+    description: Endpoint that manages photos
+  
   
   
 servers:
@@ -30,6 +55,7 @@ paths:
         content:
           application/json:
             schema:
+              description: Username schema
               type: object
               properties:
                 token:
@@ -42,6 +68,7 @@ paths:
           content:
             application/json:
               schema:
+                description: UUID of the user for the authentication purposes
                 type: object
                 properties:
                   identifier:
@@ -49,7 +76,15 @@ paths:
         
         '200':
           description: User already exists
-          
+          content: 
+            application/json:
+              schema:
+                description: UUID of the user for the authentication purposes
+                type: object
+                properties:
+                  identifier:
+                    $ref: "#/components/schemas/UniqueID"
+              
         '400': { $ref: "#/components/responses/BadRequest" }
         '500': { $ref: "#/components/responses/InternalServerError" }
 
@@ -71,6 +106,7 @@ paths:
         content:
           application/json:
             schema:
+              description: New username to be changed
               type: object
               properties:
                 newUsername:
@@ -81,12 +117,28 @@ paths:
       responses:
         '200':
           description: Username changed successfully
+          content: 
+            text/plain:
+              schema:
+                description: Okay message
+                type: string
+                minLength: 0
+                maxLength: 2000
+                example: Username changed successfully 
           
         '204':
           description: Username is the similar to the former one
 
         '409':
           description: Username is already taken by other user
+          content: 
+            text/plain:
+              schema:
+                description: Error message
+                type: string
+                minLength: 0
+                maxLength: 2000
+                example: Username is already taken by other user
           
         '400': { $ref: "#/components/responses/BadRequest" }
         '401': { $ref: "#/components/responses/Unauthorized" }
@@ -139,6 +191,14 @@ paths:
       responses:
         '201':
           description: Photo uploaded successfully
+          content: 
+            text/plain:
+              schema:
+                description: Created message
+                type: string
+                minLength: 0
+                maxLength: 2000
+                example: Photo uploaded successfully
         
         '400': { $ref: "#/components/responses/BadRequest" }
         '401': { $ref: "#/components/responses/Unauthorized" }
@@ -159,6 +219,14 @@ paths:
       responses:
         '200':
           description: Photo removed successfully
+          content: 
+            text/plain:
+              schema:
+                description: Okay message
+                type: string
+                minLength: 0
+                maxLength: 2000
+                example: Photo removed successfully
         
         '204':
           description: Photo not found
@@ -177,7 +245,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/Page"
       tags: ["followers"]
-      summary: Get followings
+      summary: Get followers
       description: |
         Get a list of followers(userIds) of a user in order to see any
         particular user's details use dedicted path /users/{userId}
@@ -236,9 +304,26 @@ paths:
       responses:
         '201':
           description: User followed successfully
-        
+          content: 
+            text/plain:
+              schema:
+                description: Created message
+                type: string
+                minLength: 0
+                maxLength: 2000
+                example: User followed successfully
+            
         '200':
           description: User already followed
+          content: 
+            text/plain:
+              schema:
+                description: Okay message
+                type: string
+                minLength: 0
+                maxLength: 2000
+                example: User already followed
+            
         
         '400': { $ref: "#/components/responses/BadRequest" }
         '401': { $ref: "#/components/responses/Unauthorized" }
@@ -254,6 +339,15 @@ paths:
       responses:
         '200':
           description: User unfollowed successfully
+          content: 
+            text/plain:
+              schema:
+                description: Okay message
+                type: string
+                minLength: 0
+                maxLength: 2000
+                example: User unfollowed successfully
+            
         
         '400': { $ref: "#/components/responses/BadRequest" }
         '401': { $ref: "#/components/responses/Unauthorized" }
@@ -301,9 +395,27 @@ paths:
       responses:
         '201':
           description: User banned successfully
+          content: 
+            text/plain:
+              schema:
+                description: Created message
+                type: string
+                minLength: 0
+                maxLength: 2000
+                example: User banned successfully
+            
         
         '200':
           description: User already banned
+          content: 
+            text/plain:
+              schema:
+                description: Okay message
+                type: string
+                minLength: 0
+                maxLength: 2000
+                example: User already banned
+            
           
         '400': { $ref: "#/components/responses/BadRequest" }
         '401': { $ref: "#/components/responses/Unauthorized" }
@@ -319,6 +431,14 @@ paths:
       responses:
         '200':
           description: User unbanned successfully
+          content: 
+            text/plain:
+              schema:
+                description: Okay message
+                type: string
+                minLength: 0
+                maxLength: 2000
+                example: User unbanned
           
         '400': { $ref: "#/components/responses/BadRequest" }
         '401': { $ref: "#/components/responses/Unauthorized" }
@@ -368,7 +488,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/User"
         
-        '404':
+        '204':
           description: User not found
         
         '400': { $ref: "#/components/responses/BadRequest" }
@@ -392,7 +512,10 @@ paths:
           content:
             application/json:
               schema:
+                description: Photos array
                 type: array
+                minItems: 1
+                maxItems: 25
                 items:
                   $ref: "#/components/schemas/Photo"
         
@@ -412,7 +535,7 @@ paths:
         '200':
           description: Details of the photo
           content:
-            image/*:
+            image/jpeg:
               schema:
                 $ref: "#/components/schemas/RawPhoto"
         
@@ -460,9 +583,27 @@ paths:
       responses:
         '201':
           description: Photo liked successfully
+          content: 
+            text/plain:
+              schema:
+                description: Created message
+                type: string
+                minLength: 0
+                maxLength: 2000
+                example: Photo liked successfully
+            
           
         '200':
           description: Photo already liked
+          content: 
+            text/plain:
+              schema:
+                description: Okay message
+                type: string
+                minLength: 0
+                maxLength: 2000
+                example: Photo already liked
+            
           
         '400': { $ref: "#/components/responses/BadRequest" }
         '401': { $ref: "#/components/responses/Unauthorized" }
@@ -477,6 +618,15 @@ paths:
       responses:
         '200':
           description: Photo unliked successfully
+          content: 
+            text/plain:
+              schema:
+                description: Okay message
+                type: string
+                minLength: 0
+                maxLength: 2000
+                example: Photo unliked successfully
+            
           
         '400': { $ref: "#/components/responses/BadRequest" }
         '401': { $ref: "#/components/responses/Unauthorized" }
@@ -488,6 +638,9 @@ paths:
       - $ref: "#/components/parameters/PhotoID"
 
     get:
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        
       tags: ["comments"]
       summary: Get comments
       description: Get a list of all comments under the photo
@@ -499,7 +652,10 @@ paths:
           content:
             application/json:
               schema: 
+                description: comments array
                 type: array
+                minItems: 1
+                maxItems: 25
                 items:
                   $ref: "#/components/schemas/Comment"
                   
@@ -522,6 +678,15 @@ paths:
       responses:
         '201':
           description: Comment added successfully
+          content: 
+            text/plain:
+              schema:
+                description: Created message
+                type: string
+                minLength: 0
+                maxLength: 2000
+                example: Comment added successfully
+            
           
         '400': { $ref: "#/components/responses/BadRequest" }
         '401': { $ref: "#/components/responses/Unauthorized" }
@@ -543,8 +708,17 @@ paths:
       responses:
         '200':
           description: Comment removed successfully
+          content: 
+            text/plain:
+              schema:
+                description: Okay message
+                type: string
+                minLength: 0
+                maxLength: 2000
+                example: Comment removed successfully
+            
         
-        '404': 
+        '204': 
           description: Comment not found
         
         '400': { $ref: "#/components/responses/BadRequest" }
@@ -620,15 +794,43 @@ components:
   responses:
     BadRequest:
       description: The request was not compliant with the documentation (eg. missing fields, etc)
-  
+      content: 
+        text/plain:
+          schema:
+            type: string
+            minLength: 0
+            maxLength: 2000
+            example: Bad Request
+
     Unauthorized:
       description: The access token is missing or invalid
+      content: 
+        text/plain:
+          schema:
+            type: string
+            minLength: 0
+            maxLength: 2000
+            example: Access token missing or invalid
       
     Forbidden:
       description: You do not have access rights to the operation
+      content: 
+        text/plain:
+          schema:
+            type: string
+            minLength: 0
+            maxLength: 2000
+            example: Forbidden
       
     InternalServerError:
       description: The server encountered an internal error. Further info in server logs
+      content: 
+        text/plain:
+          schema:
+            type: string
+            minLength: 0
+            maxLength: 2000
+            example: Internal Server Error
       
       
   schemas:
@@ -642,21 +844,20 @@ components:
       example: "550e8400-e29b-41d4-a716-446655440000"
       
     Username:
+      description: Unique username
       type: string
-      example: Maria
+      example: Maria223
       pattern: 'ˆ.*?$'
       minLength: 3
       maxLength: 32 
     
     RawPhoto:
       description: binary of an image
-      type: object
-      properties:
-        photoBinary:
-          type: string
-          minLength: 0
-          format: binary
-          example: "010010101"
+      type: string
+      minLength: 0
+      maxLength: 10000
+      format: binary
+      example: "010010101"
       
     Timestamp:
       description: Date and time representation
@@ -741,7 +942,10 @@ components:
         timestamp:
           $ref: "#/components/schemas/Timestamp"
         commentText:
+          description: string containing the comment
           type: string
+          minLength: 0
+          maxLength: 2000
           example: "You look good, my man :)"
       required:
         - commentText  
@@ -753,4 +957,3 @@ components:
       maxItems: 25
       items:
         $ref: "#/components/schemas/Comment"
-        

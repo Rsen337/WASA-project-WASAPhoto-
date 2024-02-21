@@ -9,32 +9,33 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-// returns ids of all the photos that belong to the athenticated user
+// getUserPhotos returns the IDs of all the photos that belong to the authenticated user.
 func (rt *_router) getUserPhotos(w http.ResponseWriter, r *http.Request, ps httprouter.Params, ctx reqcontext.RequestContext) {
-
+	// Set the Content-Type header to application/json
 	w.Header().Set("Content-Type", "application/json")
 
+	// Get the user ID from the URL parameters
 	userId := ps.ByName("userId")
 
-	// check if the user authorized and authenticated
+	// Check if the user is authorized and authenticated
 	reqId := getToken(r.Header.Get("Authorization"))
 	valid := rt.isAuthorized(reqId, reqId)
 	if valid != 0 {
-		ctx.Logger.Info("uploadPhoto: isAuthorized isn't happy")
-		w.WriteHeader(valid)
+		ctx.Logger.Info("getUserPhotos: User is not authorized")
+		writeResponse(w, valid, "")
 		return
 	}
 
-	// checks if the requesting user is banned
+	// Check if the requesting user is banned
 	isBanned, err := rt.db.IsBanned(userId, reqId)
 	if err != nil {
-		ctx.Logger.WithError(err).Error("IsBanned returns error")
-		w.WriteHeader(http.StatusInternalServerError)
+		ctx.Logger.WithError(err).Error("getUserPhotos: Error checking if user is banned")
+		writeResponse(w, http.StatusInternalServerError, "")
 		return
 	}
 	if isBanned {
-		w.WriteHeader(http.StatusForbidden)
-		ctx.Logger.Info("is banned")
+		writeResponse(w, http.StatusForbidden, "You have been banned by this user.")
+		ctx.Logger.Info("getUserPhotos: User is banned")
 		return
 	}
 
@@ -42,26 +43,25 @@ func (rt *_router) getUserPhotos(w http.ResponseWriter, r *http.Request, ps http
 	pageStr := r.URL.Query().Get("page")
 	page, err := strconv.Atoi(pageStr)
 	if err != nil || page <= 0 {
-		// means that the page query parameter wasn't provided, hence set it to default 1
-		ctx.Logger.WithError(err).Error("page query not provided")
+		// If the page query parameter is not provided or is invalid, set it to default 1
+		ctx.Logger.WithError(err).Error("getUserPhotos: Invalid or missing page query parameter")
 		page = 1
 	}
 
 	var photoIds []string
 
+	// Get the photo IDs for the user and page from the database
 	photoIds, err = rt.db.GetUserPhotos(userId, page)
 	if err != nil {
-		ctx.Logger.WithError(err).Error("rt.db.getUserPhotos returned an error")
-		w.WriteHeader(http.StatusInternalServerError)
+		ctx.Logger.WithError(err).Error("getUserPhotos: Error getting user photos from the database")
+		writeResponse(w, http.StatusInternalServerError, "")
 		return
 	}
 
-	// Convert photo IDs to JSON and write response
-	w.Header().Set("Content-Type", "application/json")
+	// Convert photo IDs to JSON and write the response
 	if err := json.NewEncoder(w).Encode(photoIds); err != nil {
-		ctx.Logger.WithError(err).Error("Error encoding JSON")
-		w.WriteHeader(http.StatusInternalServerError)
+		ctx.Logger.WithError(err).Error("getUserPhotos: Error encoding JSON")
+		writeResponse(w, http.StatusInternalServerError, "Error encoding JSON")
 		return
 	}
-
 }

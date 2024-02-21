@@ -1,65 +1,52 @@
 package database
 
-import "sort"
+// GetMyStream retrieves the stream of photos for a given user ID and page number.
+// It returns a slice of Photo objects and an error, if any.
+func (db *appdbimpl) GetMyStream(userID string, page int) ([]Photo, error) {
+	// PageSize defines the number of photos per page
+	const PageSize = 5
 
-// SetName is an example that shows you how to execute insert/update
-func (db *appdbimpl) GetMyStream(userId string, page int) ([]Photo, error) {
+	offset := (page - 1) * PageSize
 
-	// PageSize is the number of photos per page
-	const PageSize int = 50
+	query := `
+		SELECT * FROM photos
+		WHERE userID IN (
+			SELECT followeeID FROM followings WHERE followerID = ?
+		)
+		ORDER BY timestamp DESC
+		LIMIT ? OFFSET ?;
+	`
 
-	followings, err := db.GetFollowings(userId, 0)
+	rows, err := db.c.Query(query, userID, PageSize, offset)
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
-	query := "SELECT * FROM photos WHERE userId = ?"
-
-	// get all the photos from all the followings
+	// Retrieve all the photos from the followings
 	var photos []Photo
-	for _, following := range followings {
-		rows, err := db.c.Query(query, following.UserID)
+
+	for rows.Next() {
+		var photo Photo
+		err = rows.Scan(&photo.PhotoID, &photo.UserID, &photo.Timestamp)
 		if err != nil {
 			return nil, err
 		}
-		defer rows.Close()
 
-		for rows.Next() {
-			var photo Photo
-			err = rows.Scan(&photo.PhotoID, &photo.UserID, &photo.Timestamp)
-			if err != nil {
-				return nil, err
-			}
-			photo.Comments, err = db.GetPhotoComments(photo.PhotoID)
-			if err != nil {
-				return []Photo{}, err
-			}
-
-			photo.LikesAmount, err = db.GetPhotoLikes(photo.PhotoID)
-			if err != nil {
-				return []Photo{}, err
-			}
-
-			photos = append(photos, photo)
+		// Retrieve comments for the photo
+		photo.Comments, err = db.GetPhotoComments(photo.PhotoID, 1)
+		if err != nil {
+			return nil, err
 		}
+
+		// Retrieve likes amount for the photo
+		photo.LikesAmount, err = db.GetPhotoLikes(photo.PhotoID)
+		if err != nil {
+			return nil, err
+		}
+
+		photos = append(photos, photo)
 	}
 
-	// sort the photo by chronological order
-	sort.Slice(photos, func(i, j int) bool {
-		return photos[i].Timestamp.After(photos[j].Timestamp)
-	})
-
-	// Calculate start and end indices
-	start := (page - 1) * PageSize
-	end := start + PageSize
-
-	// Check if end index is within the range of the slice
-	if end > len(photos) {
-		end = len(photos)
-	}
-
-	// Get the photos for the current page
-	pagePhotos := photos[start:end]
-
-	return pagePhotos, nil
+	return photos, nil
 }

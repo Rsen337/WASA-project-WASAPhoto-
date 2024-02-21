@@ -7,25 +7,25 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
+// unbanUser handles the HTTP request to unban a user.
 func (rt *_router) unbanUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params, ctx reqcontext.RequestContext) {
-
 	userId := ps.ByName("userId")
 	otherUserId := ps.ByName("otherUserId")
 
-	// check if the user authorized and authenticated to change his username
+	// Check if the user is authorized and authenticated to unban the user.
 	valid := rt.isAuthorized(userId, getToken(r.Header.Get("Authorization")))
 	if valid != 0 {
-		ctx.Logger.Info("uploadPhoto: isAuthorized isn't happy")
-		w.WriteHeader(valid)
+		ctx.Logger.Info("unbanUser: User is not authorized")
+		writeResponse(w, valid, "")
 		return
 	}
 
 	err := rt.db.UnbanUser(userId, otherUserId)
 	if err != nil {
-		ctx.Logger.WithError(err).Error("UnfollowUser returns error")
-		w.WriteHeader(http.StatusInternalServerError)
+		ctx.Logger.WithError(err).Error("unbanUser: Failed to unban user")
+		writeResponse(w, http.StatusInternalServerError, "Failed to unban user.")
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	writeResponse(w, http.StatusOK, "You have successfully unbanned the user.")
 }

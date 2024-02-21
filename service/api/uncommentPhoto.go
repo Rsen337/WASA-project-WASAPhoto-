@@ -7,46 +7,49 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
+// uncommentPhoto handles the HTTP request to uncomment a photo.
 func (rt *_router) uncommentPhoto(w http.ResponseWriter, r *http.Request, ps httprouter.Params, ctx reqcontext.RequestContext) {
+	photoID := ps.ByName("photoId")
+	commentID := ps.ByName("commentId")
 
-	photoId := ps.ByName("photoId")
-	commentId := ps.ByName("commentId")
-
-	// check if the user authorized and authenticated
-	reqId := getToken(r.Header.Get("Authorization"))
-	valid := rt.isAuthorized(reqId, reqId)
-	if valid != 0 {
-		ctx.Logger.Info("uploadPhoto: isAuthorized isn't happy")
-		w.WriteHeader(valid)
+	// Check if the user is authorized and authenticated.
+	reqID := getToken(r.Header.Get("Authorization"))
+	isValid := rt.isAuthorized(reqID, reqID)
+	if isValid != 0 {
+		ctx.Logger.Info("uncommentPhoto: User is not authorized")
+		writeResponse(w, isValid, "")
 		return
 	}
 
-	isOwner, err := rt.db.IsPhotoOwner(photoId, reqId)
+	// Check if the user is the owner of the photo.
+	isOwner, err := rt.db.IsPhotoOwner(photoID, reqID)
 	if err != nil {
-		ctx.Logger.WithError(err).Error("IsPhotoOwner returns error")
-		w.WriteHeader(http.StatusInternalServerError)
+		ctx.Logger.WithError(err).Error("uncommentPhoto: Failed to check if user is the owner of the photo")
+		writeResponse(w, http.StatusInternalServerError, "")
 		return
 	} else if !isOwner {
-		w.WriteHeader(http.StatusForbidden)
+		writeResponse(w, http.StatusForbidden, "You are not the owner of the photo")
 		return
 	}
 
-	commentExists, err := rt.db.CommentExists(commentId)
+	// Check if the comment exists.
+	commentExists, err := rt.db.CommentExists(commentID)
 	if err != nil {
-		ctx.Logger.WithError(err).Error("IsPhotoOwner returns error")
-		w.WriteHeader(http.StatusInternalServerError)
+		ctx.Logger.WithError(err).Error("uncommentPhoto: Failed to check if comment exists")
+		writeResponse(w, http.StatusInternalServerError, "")
 		return
 	} else if !commentExists {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
-	err = rt.db.UncommentPhoto(commentId)
+	// Uncomment the photo.
+	err = rt.db.UncommentPhoto(commentID)
 	if err != nil {
-		ctx.Logger.WithError(err).Error("CommentPhoto returns error")
-		w.WriteHeader(http.StatusInternalServerError)
+		ctx.Logger.WithError(err).Error("uncommentPhoto: Failed to uncomment the photo")
+		writeResponse(w, http.StatusInternalServerError, "")
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	writeResponse(w, http.StatusOK, "Uncommented on photo successfully")
 }

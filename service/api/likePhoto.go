@@ -6,28 +6,27 @@ import (
 	"net/http"
 )
 
+// likePhoto handles the HTTP POST request for liking a photo.
 func (rt *_router) likePhoto(w http.ResponseWriter, r *http.Request, ps httprouter.Params, ctx reqcontext.RequestContext) {
+	photoID := ps.ByName("photoId")
+	userID := ps.ByName("userId")
 
-	photoId := ps.ByName("photoId")
-	userId := ps.ByName("userId")
-
-	// check if the user authorized and authenticated
-	reqId := getToken(r.Header.Get("Authorization"))
-	valid := rt.isAuthorized(userId, reqId)
-	if valid != 0 {
-		ctx.Logger.Info("uploadPhoto: isAuthorized isn't happy")
-		w.WriteHeader(valid)
+	// Check if the user is authorized and authenticated.
+	reqID := getToken(r.Header.Get("Authorization"))
+	isAuthorized := rt.isAuthorized(userID, reqID)
+	if isAuthorized != 0 {
+		ctx.Logger.Info("likePhoto: User is not authorized")
+		writeResponse(w, isAuthorized, "")
 		return
 	}
 
-	err := rt.db.LikePhoto(photoId, userId)
+	err := rt.db.LikePhoto(photoID, userID)
 	if err != nil {
-		// already liked
-		ctx.Logger.WithError(err).Error("LikePhoto returns an error")
-		w.WriteHeader(http.StatusOK)
+		// The photo is already liked.
+		ctx.Logger.WithError(err).Error("likePhoto: LikePhoto returns an error")
+		writeResponse(w, http.StatusOK, "You already liked this photo")
 		return
 	}
 
-	w.WriteHeader(http.StatusCreated)
-
+	writeResponse(w, http.StatusCreated, "Photo liked successfully")
 }

@@ -9,47 +9,47 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
+// searchUser handles the search user API endpoint.
 func (rt *_router) searchUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params, ctx reqcontext.RequestContext) {
-
-	// Parse the page query parameter from the request URL
+	// Parse the "username" query parameter from the request URL
 	toSearch := r.URL.Query().Get("username")
 
+	// Parse the "page" query parameter from the request URL
 	pageStr := r.URL.Query().Get("page")
 	page, err := strconv.Atoi(pageStr)
 	if err != nil || page <= 0 {
-		// means that the page query parameter wasn't provided, hence set it to default 1
+		// If the "page" query parameter wasn't provided or is invalid, set it to default 1
 		ctx.Logger.WithError(err).Error("page query not provided")
 		page = 1
 	}
 
-	// check if the user authorized and authenticated to change his username
+	// Check if the user is authorized and authenticated to change their username
 	userId := getToken(r.Header.Get("Authorization"))
 	valid := rt.isAuthorized(userId, userId)
 	if valid != 0 {
-		ctx.Logger.Info("uploadPhoto: isAuthorized isn't happy")
-		w.WriteHeader(valid)
+		ctx.Logger.Info("searchUser: isAuthorized isn't happy")
+		writeResponse(w, valid, "User is not authorized")
 		return
 	}
 
-	// get matching results
+	// Get matching results
 	users, err := rt.db.SearchUser(toSearch, userId, page)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		ctx.Logger.WithError(err).Error("SeachUser returns an error")
+		writeResponse(w, http.StatusInternalServerError, "Error searching for users")
+		ctx.Logger.WithError(err).Error("SearchUser returns an error")
 		return
 	}
 	if len(users) == 0 {
 		w.WriteHeader(http.StatusNoContent)
-		ctx.Logger.Info("no matching users")
+		ctx.Logger.Info("No matching users")
 		return
 	}
 
-	// send the list to the client
+	// Send the list of users to the client
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(users); err != nil {
 		ctx.Logger.WithError(err).Error("Error encoding JSON")
-		w.WriteHeader(http.StatusInternalServerError)
+		writeResponse(w, http.StatusInternalServerError, "Error encoding JSON")
 		return
 	}
-
 }

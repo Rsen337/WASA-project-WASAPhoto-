@@ -1,6 +1,7 @@
 package database
 
-func (db appdbimpl) LikePhoto(photoId string, userId string) error {
+// LikePhoto inserts a new like into the database for the given photo and user.
+func (db appdbimpl) LikePhoto(photoID string, userID string) error {
 	// Prepare the SQL query
 	query := "INSERT INTO likes (photoId, userId) VALUES (?, ?)"
 	stmt, err := db.c.Prepare(query)
@@ -10,7 +11,7 @@ func (db appdbimpl) LikePhoto(photoId string, userId string) error {
 	defer stmt.Close()
 
 	// Execute the query to insert the new row
-	_, err = stmt.Exec(photoId, userId)
+	_, err = stmt.Exec(photoID, userID)
 	if err != nil {
 		return err
 	}
@@ -18,7 +19,8 @@ func (db appdbimpl) LikePhoto(photoId string, userId string) error {
 	return nil
 }
 
-func (db appdbimpl) UnlikePhoto(photoId string, userId string) error {
+// UnlikePhoto removes a like from the database for the given photo and user.
+func (db appdbimpl) UnlikePhoto(photoID string, userID string) error {
 
 	// Prepare the SQL query
 	query := "DELETE FROM likes WHERE photoId = ? AND userId = ?"
@@ -29,7 +31,7 @@ func (db appdbimpl) UnlikePhoto(photoId string, userId string) error {
 	defer stmt.Close()
 
 	// Execute the query to delete the row
-	_, err = stmt.Exec(photoId, userId)
+	_, err = stmt.Exec(photoID, userID)
 	if err != nil {
 		return err
 	}

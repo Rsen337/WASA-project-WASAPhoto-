@@ -58,7 +58,7 @@ type AppDatabase interface {
 	// Photos
 	GetPhoto(photoId string) (string, time.Time, error)
 	GetPhotoLikes(photoId string) (int, error)
-	GetPhotoComments(photoId string) ([]Comment, error)
+	GetPhotoComments(photoId string, page int) ([]Comment, error)
 
 	// Followers
 	GetFollowers(userId string, page int) ([]User, error)
@@ -114,6 +114,9 @@ func New(db *sql.DB) (AppDatabase, error) {
 	// Check if table exists. If not, the database is empty, and we need to create the structure
 	var tableName string
 	_, err := db.Exec(`DROP TABLE IF EXISTS example_table`)
+	if err != nil {
+		return nil, err
+	}
 	err = db.QueryRow(`SELECT name FROM sqlite_master WHERE type='table' AND name='example_table';`).Scan(&tableName)
 	if errors.Is(err, sql.ErrNoRows) {
 

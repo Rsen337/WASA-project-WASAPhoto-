@@ -9,52 +9,59 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
+// getFollowers handles the GET request to retrieve followers of a user.
 func (rt *_router) getFollowers(w http.ResponseWriter, r *http.Request, ps httprouter.Params, ctx reqcontext.RequestContext) {
 	userId := ps.ByName("userId")
+
 	// Parse the page query parameter from the request URL
 	pageStr := r.URL.Query().Get("page")
 	page, err := strconv.Atoi(pageStr)
 	if err != nil || page <= 0 {
-		// means that the page query parameter wasn't provided, hence set it to default 1
-		ctx.Logger.WithError(err).Error("page query not provided")
+		// If the page query parameter wasn't provided or is invalid, set it to default 1
+		ctx.Logger.WithError(err).Error("Invalid or missing page query parameter")
 		page = 1
 	}
 
-	// check if the user authorized and authenticated
+	// Check if the user is authorized and authenticated
 	reqId := getToken(r.Header.Get("Authorization"))
 	valid := rt.isAuthorized(reqId, reqId)
 	if valid != 0 {
-		ctx.Logger.Info("uploadPhoto: isAuthorized isn't happy")
-		w.WriteHeader(valid)
+		ctx.Logger.Info("getFollowers: User is not authorized")
+		// w.WriteHeader(valid)
+		writeResponse(w, valid, "")
 		return
 	}
 
-	// checks if the requesting user is banned
+	// Check if the requesting user is banned
 	isBanned, err := rt.db.IsBanned(userId, reqId)
 	if err != nil {
-		ctx.Logger.WithError(err).Error("IsBanned returns error")
-		w.WriteHeader(http.StatusInternalServerError)
+		ctx.Logger.WithError(err).Error("IsBanned returns an error")
+		// w.WriteHeader(http.StatusInternalServerError)
+		writeResponse(w, http.StatusInternalServerError, "")
 		return
 	}
 	if isBanned {
-		w.WriteHeader(http.StatusForbidden)
-		ctx.Logger.Info("is banned")
+		// w.WriteHeader(http.StatusForbidden)
+		writeResponse(w, http.StatusForbidden, "You have been banned by this user.")
+		ctx.Logger.Info("getFollowers: User is banned")
 		return
 	}
 
-	followings, err := rt.db.GetFollowers(userId, page)
+	// Retrieve followers from the database
+	followers, err := rt.db.GetFollowers(userId, page)
 	if err != nil {
-		ctx.Logger.WithError(err).Error("GetFollowers returns error")
-		w.WriteHeader(http.StatusInternalServerError)
+		ctx.Logger.WithError(err).Error("GetFollowers returns an error")
+		// w.WriteHeader(http.StatusInternalServerError)
+		writeResponse(w, http.StatusInternalServerError, "")
 		return
 	}
 
-	// Convert photo IDs to JSON and write response
+	// Convert followers to JSON and write the response
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(followings); err != nil {
+	if err := json.NewEncoder(w).Encode(followers); err != nil {
 		ctx.Logger.WithError(err).Error("Error encoding JSON")
-		w.WriteHeader(http.StatusInternalServerError)
+		// w.WriteHeader(http.StatusInternalServerError)
+		writeResponse(w, http.StatusInternalServerError, "")
 		return
 	}
-
 }

@@ -1,9 +1,10 @@
 package database
 
-// returns false also if banner == bannee
-func (db appdbimpl) IsBanned(bannerId string, banneeId string) (bool, error) {
+// IsBanned checks if a user is banned by another user.
+// It returns false if the banner and bannee IDs are the same.
+func (db appdbimpl) IsBanned(bannerID string, banneeID string) (bool, error) {
 
-	if bannerId == banneeId {
+	if bannerID == banneeID {
 		return false, nil
 	}
 
@@ -17,7 +18,7 @@ func (db appdbimpl) IsBanned(bannerId string, banneeId string) (bool, error) {
 
 	// Execute the query and scan the result
 	var exists bool
-	err = stmt.QueryRow(bannerId, banneeId).Scan(&exists)
+	err = stmt.QueryRow(bannerID, banneeID).Scan(&exists)
 	if err != nil {
 		return false, err
 	}
@@ -25,17 +26,18 @@ func (db appdbimpl) IsBanned(bannerId string, banneeId string) (bool, error) {
 	return exists, nil
 }
 
-func (db appdbimpl) GetBannedUsers(userId string, page int) ([]User, error) {
+// GetBannedUsers retrieves a list of banned users for a given user ID with pagination.
+func (db appdbimpl) GetBannedUsers(userID string, page int) ([]User, error) {
 
-	// PageSize is the number of photos per page
+	// PageSize is the number of users per page
 	const PageSize int = 50
 
-	// Define the SQL query to fetch photo IDs for the specified user with pagination
+	// Define the SQL query to fetch banned user IDs for the specified user with pagination
 	offset := (page - 1) * PageSize
 
 	// Prepare the SQL query
 	query := "SELECT banneeId FROM banned WHERE bannerId = ? LIMIT ? OFFSET ?"
-	rows, err := db.c.Query(query, userId, PageSize, offset)
+	rows, err := db.c.Query(query, userID, PageSize, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +45,7 @@ func (db appdbimpl) GetBannedUsers(userId string, page int) ([]User, error) {
 
 	var bannedUsers []User
 
-	// Iterate over the rows and scan the result into Comment structs
+	// Iterate over the rows and scan the result into User structs
 	for rows.Next() {
 
 		var bannee User
@@ -69,7 +71,8 @@ func (db appdbimpl) GetBannedUsers(userId string, page int) ([]User, error) {
 	return bannedUsers, nil
 }
 
-func (db appdbimpl) BanUser(bannerId string, banneeId string) error {
+// BanUser bans a user by adding a new row to the "banned" table.
+func (db appdbimpl) BanUser(bannerID string, banneeID string) error {
 	// Prepare the SQL query
 	query := "INSERT INTO banned (bannerId, banneeId) VALUES (?, ?)"
 	stmt, err := db.c.Prepare(query)
@@ -79,7 +82,7 @@ func (db appdbimpl) BanUser(bannerId string, banneeId string) error {
 	defer stmt.Close()
 
 	// Execute the query to insert the new row
-	_, err = stmt.Exec(bannerId, banneeId)
+	_, err = stmt.Exec(bannerID, banneeID)
 	if err != nil {
 		return err
 	}
@@ -87,7 +90,8 @@ func (db appdbimpl) BanUser(bannerId string, banneeId string) error {
 	return nil
 }
 
-func (db appdbimpl) UnbanUser(bannerId string, banneeId string) error {
+// UnbanUser removes a user from the "banned" table.
+func (db appdbimpl) UnbanUser(bannerID string, banneeID string) error {
 	// Prepare the SQL query
 	query := "DELETE FROM banned WHERE bannerId = ? AND banneeId = ?"
 	stmt, err := db.c.Prepare(query)
@@ -97,7 +101,7 @@ func (db appdbimpl) UnbanUser(bannerId string, banneeId string) error {
 	defer stmt.Close()
 
 	// Execute the query to delete the row
-	_, err = stmt.Exec(bannerId, banneeId)
+	_, err = stmt.Exec(bannerID, banneeID)
 	if err != nil {
 		return err
 	}

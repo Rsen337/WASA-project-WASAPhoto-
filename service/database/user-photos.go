@@ -5,8 +5,9 @@ import (
 	"time"
 )
 
+// GetUserPhotos retrieves the photo IDs for the specified user with pagination.
+// It takes the user ID and the page number as parameters and returns a slice of photo IDs and an error.
 func (db *appdbimpl) GetUserPhotos(userId string, page int) ([]string, error) {
-
 	// PageSize is the number of photos per page
 	const PageSize int = 10
 
@@ -26,7 +27,6 @@ func (db *appdbimpl) GetUserPhotos(userId string, page int) ([]string, error) {
 	for rows.Next() {
 		var photoId string
 		if err := rows.Scan(&photoId); err != nil {
-
 			continue
 		}
 		photoIds = append(photoIds, photoId)
@@ -34,18 +34,20 @@ func (db *appdbimpl) GetUserPhotos(userId string, page int) ([]string, error) {
 	return photoIds, nil
 }
 
+// UploadPhoto inserts the photo ID into the photo table.
+// It takes the photo ID and the user ID as parameters and returns an error.
 func (db *appdbimpl) UploadPhoto(photoId string, userId string) error {
-
-	// insert the photoId into the photo table
+	// Insert the photo ID into the photo table
 	_, err := db.c.Exec("INSERT INTO photos (photoId, userId, timestamp) VALUES (?, ?, ?)",
 		photoId, userId, time.Now().UTC())
 
 	return err
 }
 
+// DeletePhoto removes the photo from the database.
+// It takes the photo ID as a parameter and returns an error.
 func (db *appdbimpl) DeletePhoto(photoId string) error {
-
-	// remove photo from the database
+	// Remove photo from the database
 	stmt, err := db.c.Exec("DELETE FROM photos WHERE photoId = ?", photoId)
 	if err != nil {
 		return err

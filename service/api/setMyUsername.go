@@ -8,66 +8,77 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
+// Username represents the new username to be set
 type Username struct {
 	Username string `json:"newUsername"`
 }
 
+// setMyUsername is the handler function for setting the username
 func (rt *_router) setMyUsername(w http.ResponseWriter, r *http.Request, ps httprouter.Params, ctx reqcontext.RequestContext) {
-
 	userId := ps.ByName("userId")
 
-	// check if the user authorized and authenticated to change his username
+	// Check if the user is authorized and authenticated to change their username
 	valid := rt.isAuthorized(userId, getToken(r.Header.Get("Authorization")))
 	if valid != 0 {
-		w.WriteHeader(valid)
+		// w.WriteHeader(valid)
+		writeResponse(w, valid, "")
 		return
 	}
 
-	// get a new username
+	// Decode the new username from the request body
 	var newUsername Username
 	err := json.NewDecoder(r.Body).Decode(&newUsername)
 	if err != nil {
-		ctx.Logger.WithError(err).Error("setMyUsername: error decoding json")
-		w.WriteHeader(http.StatusBadRequest)
+		ctx.Logger.WithError(err).Error("setMyUsername: error decoding JSON")
+		// w.WriteHeader(http.StatusBadRequest)
+		writeResponse(w, http.StatusBadRequest, "Invalid JSON format")
 		return
 	}
 
-	// check its validity
+	// Check the validity of the new username
 	if !usernameIsValid(newUsername.Username) {
 		ctx.Logger.Infof("setMyUsername: username is not valid")
-		w.WriteHeader(http.StatusBadRequest)
+		// w.WriteHeader(http.StatusBadRequest)
+		writeResponse(w, http.StatusBadRequest, "Invalid username")
 		return
 	}
 
-	// check if the username is similar to the old one
+	// Check if the new username is the same as the old one
 	usernameIsSame, err := rt.db.UsernameIsSame(userId, newUsername.Username)
 	if err != nil {
-		ctx.Logger.WithError(err).Error("setMyUsername: UsernameIsSame returns error")
-		w.WriteHeader(http.StatusInternalServerError)
+		ctx.Logger.WithError(err).Error("setMyUsername: UsernameIsSame returns an error")
+		// w.WriteHeader(http.StatusInternalServerError)
+		writeResponse(w, http.StatusInternalServerError, "")
 		return
 	} else if usernameIsSame {
-		// Respond with 204 http status
+		// Respond with 204 HTTP status (No Content)
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}
 
-	// check if the username is already taken
+	// Check if the new username is already taken
 	usernameIsTaken, err := rt.db.UsernameIsTaken(userId, newUsername.Username)
 	if err != nil {
-		ctx.Logger.WithError(err).Error("setMyUsername: UsernameIsTaken gives error")
-		w.WriteHeader(http.StatusInternalServerError)
+		ctx.Logger.WithError(err).Error("setMyUsername: UsernameIsTaken returns an error")
+		// w.WriteHeader(http.StatusInternalServerError)
+		writeResponse(w, http.StatusInternalServerError, "")
 		return
 	} else if usernameIsTaken {
-		w.WriteHeader(http.StatusConflict)
+		// w.WriteHeader(http.StatusConflict)
+		writeResponse(w, http.StatusConflict, "Username is already taken")
+		return
 	}
 
-	// change username in the database
+	// Change the username in the database
 	err = rt.db.SetMyUsername(userId, newUsername.Username)
 	if err != nil {
 		ctx.Logger.WithError(err).Error("setMyUsername: error executing update query")
-		w.WriteHeader(http.StatusInternalServerError)
+		// w.WriteHeader(http.StatusInternalServerError)
+		writeResponse(w, http.StatusInternalServerError, "")
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	// w.WriteHeader(http.StatusOK)
+	writeResponse(w, http.StatusOK, "Username updated successfully")
+
 }

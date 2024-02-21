@@ -1,16 +1,17 @@
 package database
 
+// User represents a user in the database
 type User struct {
 	UserID   string `json:"userId"`
 	Username string `json:"username"`
 }
 
+// SearchUser searches for users based on the provided search criteria
 func (db appdbimpl) SearchUser(toSearch string, userId string, page int) ([]User, error) {
-
-	// PageSize is the number of photos per page
+	// PageSize is the number of users per page
 	const PageSize int = 10
 
-	// Define the SQL query to fetch photo IDs for the specified user with pagination
+	// Define the SQL query to fetch users with pagination
 	offset := (page - 1) * PageSize
 	query := "SELECT * FROM users WHERE (username LIKE ?) AND userId NOT IN (SELECT bannerId FROM banned WHERE banneeId = ?) LIMIT ? OFFSET ?"
 
@@ -39,6 +40,7 @@ func (db appdbimpl) SearchUser(toSearch string, userId string, page int) ([]User
 	return users, nil
 }
 
+// UserProfile represents the profile of a user
 type UserProfile struct {
 	UserID     string `json:"userId"`
 	Username   string `json:"username"`
@@ -47,8 +49,8 @@ type UserProfile struct {
 	Followings int    `json:"followings"`
 }
 
+// GetUserProfile retrieves the profile of a user
 func (db appdbimpl) GetUserProfile(userId string) (UserProfile, error) {
-
 	username, err := db.GetUsername(userId)
 	if err != nil {
 		return UserProfile{}, err
@@ -79,5 +81,4 @@ func (db appdbimpl) GetUserProfile(userId string) (UserProfile, error) {
 		Followers:  followers,
 		Followings: followees,
 	}, nil
-
 }

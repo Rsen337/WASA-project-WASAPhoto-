@@ -4,24 +4,23 @@ import "time"
 
 // Photo represents the structure of a photo.
 type Photo struct {
-	PhotoID     string    `json:"photoID"`
-	UserID      string    `json:"author"`
-	Timestamp   time.Time `json:"timestamp"`
-	LikesAmount int       `json:"likesAmount"`
-	Comments    []Comment `json:"comments"`
+	PhotoID     string    `json:"photoID"`     // PhotoID is the unique identifier of the photo.
+	UserID      string    `json:"author"`      // UserID is the identifier of the user who uploaded the photo.
+	Timestamp   time.Time `json:"timestamp"`   // Timestamp is the time when the photo was uploaded.
+	LikesAmount int       `json:"likesAmount"` // LikesAmount is the number of likes the photo has received.
+	Comments    []Comment `json:"comments"`    // Comments is a list of comments on the photo.
 }
 
 // Comment represents the structure of a comment.
 type Comment struct {
-	CommentID string    `json:"commentID"`
-	UserID    string    `json:"author"`
-	Content   string    `json:"commentText"`
-	Timestamp time.Time `json:"timestamp"`
+	CommentID string    `json:"commentID"`   // CommentID is the unique identifier of the comment.
+	UserID    string    `json:"author"`      // UserID is the identifier of the user who posted the comment.
+	Content   string    `json:"commentText"` // Content is the text content of the comment.
+	Timestamp time.Time `json:"timestamp"`   // Timestamp is the time when the comment was posted.
 }
 
-// Getauthor is an example that shows you how to query data
-func (db *appdbimpl) GetPhoto(photoId string) (string, time.Time, error) {
-
+// GetPhoto retrieves the user ID and timestamp of a photo with the given photo ID.
+func (db *appdbimpl) GetPhoto(photoID string) (string, time.Time, error) {
 	// Prepare the SQL query
 	query := "SELECT userId, timestamp FROM photos WHERE photoId = ?"
 	stmt, err := db.c.Prepare(query)
@@ -31,39 +30,47 @@ func (db *appdbimpl) GetPhoto(photoId string) (string, time.Time, error) {
 	defer stmt.Close()
 
 	// Execute the query and scan the result
-	var userId string
+	var userID string
 	var timestamp time.Time
-	err = stmt.QueryRow(photoId).Scan(&userId, &timestamp)
+	err = stmt.QueryRow(photoID).Scan(&userID, &timestamp)
 	if err != nil {
 		return "", time.Now(), err
 	}
 
-	return userId, timestamp, nil
+	return userID, timestamp, nil
 }
 
-func (db *appdbimpl) GetPhotoLikes(photoId string) (int, error) {
-	// Prepare the SQL statement to count likes for the given photoId
+// GetPhotoLikes retrieves the number of likes for a photo with the given photo ID.
+func (db *appdbimpl) GetPhotoLikes(photoID string) (int, error) {
+	// Prepare the SQL statement to count likes for the given photo ID
 	query := "SELECT COUNT(*) FROM likes WHERE photoId = ?"
 
 	// Execute the query and retrieve the count
 	var likesAmount int
-	err := db.c.QueryRow(query, photoId).Scan(&likesAmount)
+	err := db.c.QueryRow(query, photoID).Scan(&likesAmount)
 	if err != nil {
 		return 0, err
 	}
 	return likesAmount, nil
 }
 
-func (db *appdbimpl) GetPhotoComments(photoId string) ([]Comment, error) {
-	var comments []Comment
+// GetPhotoComments retrieves the comments for a photo with the given photo ID and page number.
+func (db *appdbimpl) GetPhotoComments(photoID string, page int) ([]Comment, error) {
+	// PageSize is the number of comments per page
+	const PageSize int = 50
+
+	// Define the SQL query to fetch comments for the specified photo with pagination
+	offset := (page - 1) * PageSize
 
 	// Prepare the SQL query
-	query := "SELECT commentId, userId, commentText, timestamp FROM comments WHERE photoId = ?"
-	rows, err := db.c.Query(query, photoId)
+	query := "SELECT commentId, userId, commentText, timestamp FROM comments WHERE photoId = ? LIMIT ? OFFSET ?"
+	rows, err := db.c.Query(query, photoID, PageSize, offset)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
+
+	var comments []Comment
 
 	// Iterate over the rows and scan the result into Comment structs
 	for rows.Next() {
