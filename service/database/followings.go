@@ -141,3 +141,29 @@ func (db appdbimpl) GetFollowers(userId string, page int) ([]User, error) {
 
 	return followers, nil
 }
+
+// IsFollowed checks if a user is followed by another user.
+// It returns false if the follower and followee IDs are the same.
+func (db appdbimpl) IsFollowed(followerID string, followeeID string) (bool, error) {
+
+	if followerID == followeeID {
+		return false, nil
+	}
+
+	// Prepare the SQL query
+	query := "SELECT EXISTS(SELECT 1 FROM followings WHERE followerId = ? AND followeeId = ?)"
+	stmt, err := db.c.Prepare(query)
+	if err != nil {
+		return false, err
+	}
+	defer stmt.Close()
+
+	// Execute the query and scan the result
+	var exists bool
+	err = stmt.QueryRow(followerID, followeeID).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+
+	return exists, nil
+}

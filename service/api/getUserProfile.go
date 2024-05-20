@@ -34,7 +34,7 @@ func (rt *_router) getUserProfile(w http.ResponseWriter, r *http.Request, ps htt
 		return
 	}
 
-	user, err := rt.db.GetUserProfile(userId)
+	user, err := rt.db.GetUserProfile(userId, reqId)
 	if err != nil {
 		writeResponse(w, http.StatusInternalServerError, "Error getting user profile")
 		ctx.Logger.WithError(err).Error("getUserProfile: GetUserProfile returns an error")

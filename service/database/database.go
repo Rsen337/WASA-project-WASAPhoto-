@@ -67,6 +67,7 @@ type AppDatabase interface {
 	GetFollowings(userId string, page int) ([]User, error)
 	FollowUser(followerId string, followeeId string) error
 	UnfollowUser(followerId string, followeeId string) error
+	IsFollowed(followerId string, followeeId string) (bool, error)
 
 	// Banned
 	IsBanned(bannerId string, banneeId string) (bool, error)
@@ -76,7 +77,7 @@ type AppDatabase interface {
 
 	// Search users
 	SearchUser(toSearh string, userId string, page int) ([]User, error)
-	GetUserProfile(userId string) (UserProfile, error)
+	GetUserProfile(userId string, authUser string) (UserProfile, error)
 
 	// Stream
 	GetMyStream(userId string, page int) ([]Photo, error)
@@ -84,12 +85,14 @@ type AppDatabase interface {
 	// Like
 	LikePhoto(photoId string, userId string) error
 	UnlikePhoto(photoId string, userId string) error
+	IsLiked(photoID string, userID string) (bool, error)
 
 	// Comment
 	CommentPhoto(photoId string, userId string, commentText string) error
 	UncommentPhoto(commentId string) error
 	IsPhotoOwner(photoId string, userId string) (bool, error)
 	CommentExists(commentId string) (bool, error)
+	GetPhotoCommentsCount(photoID string) (int, error)
 
 	Ping() error
 }

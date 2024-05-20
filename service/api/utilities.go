@@ -38,25 +38,25 @@ func usernameIsValid(username string) bool {
 // It returns an HTTP status code indicating the authorization result.
 func (rt *_router) isAuthorized(reqUserId string, auth string) int {
 	if auth == "" {
-		return http.StatusForbidden
+		return http.StatusUnauthorized
 	}
 
 	reqExists, err := rt.db.UserExists(reqUserId)
 	if err != nil {
 		return http.StatusInternalServerError
 	} else if !reqExists {
-		return http.StatusForbidden
+		return http.StatusUnauthorized
 	}
 
 	authExists, err := rt.db.UserExists(auth)
 	if err != nil {
 		return http.StatusInternalServerError
 	} else if !authExists {
-		return http.StatusForbidden
+		return http.StatusUnauthorized
 	}
 
 	if reqUserId != auth {
-		return http.StatusUnauthorized
+		return http.StatusForbidden
 	}
 
 	return 0

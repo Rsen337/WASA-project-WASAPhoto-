@@ -34,7 +34,7 @@ func (db *appdbimpl) GetMyStream(userID string, page int) ([]Photo, error) {
 		}
 
 		// Retrieve comments for the photo
-		photo.Comments, err = db.GetPhotoComments(photo.PhotoID, 1)
+		photo.CommentsAmount, err = db.GetPhotoCommentsCount(photo.PhotoID)
 		if err != nil {
 			return nil, err
 		}

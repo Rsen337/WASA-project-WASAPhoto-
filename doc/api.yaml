@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: WASAPhoto API
   description: API for WASAPhoto, a webapp for sharing photos.
-  version: 3.2.1
+  version: 3.3.0
   
 tags:
   - name: "login"
@@ -512,12 +512,7 @@ paths:
           content:
             application/json:
               schema:
-                description: Photos array
-                type: array
-                minItems: 1
-                maxItems: 25
-                items:
-                  $ref: "#/components/schemas/Photo"
+                $ref: "#/components/schemas/Photos"
         
         '400': { $ref: "#/components/responses/BadRequest" }
         '401': { $ref: "#/components/responses/Unauthorized" }
@@ -651,13 +646,8 @@ paths:
           description: A list of comments
           content:
             application/json:
-              schema: 
-                description: comments array
-                type: array
-                minItems: 1
-                maxItems: 25
-                items:
-                  $ref: "#/components/schemas/Comment"
+              schema:
+                $ref: "#/components/schemas/Comments"
                   
         '400': { $ref: "#/components/responses/BadRequest" }
         '401': { $ref: "#/components/responses/Unauthorized" }
@@ -673,7 +663,11 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Comment"
+              description: Comment text
+              type: object
+              properties:
+                commentText:
+                  $ref: "#/components/schemas/Comment/properties/commentText"
               
       responses:
         '201':
@@ -884,7 +878,7 @@ components:
       description: a user profile containg username, photos, followers and followings
       type: object
       properties:
-        userID: 
+        userId: 
           $ref: "#/components/schemas/UniqueID"
         username: 
           $ref: "#/components/schemas/Username"
@@ -894,6 +888,14 @@ components:
           $ref: "#/components/schemas/Amount"
         followings:
           $ref: "#/components/schemas/Amount"
+        followed:
+          description: boolean value indicating if the user is followed by the authenticated user
+          type: boolean
+          readOnly: true
+        banned:
+          description: boolean value indicating if the user is banned by the authenticated user
+          type: boolean
+          readOnly: true
           
     Users:
       description: Paginated list of users
@@ -904,7 +906,7 @@ components:
         type: object
         properties:
           userId:
-            $ref: "#/components/schemas/User/properties/userID"
+            $ref: "#/components/schemas/User/properties/userId"
           username:
             $ref: "#/components/schemas/User/properties/username"
       
@@ -919,12 +921,18 @@ components:
           $ref: "#/components/schemas/UniqueID"
         author: 
           $ref: "#/components/schemas/UniqueID"
+        username:
+          $ref: "#/components/schemas/Username"
         timestamp:
           $ref: "#/components/schemas/Timestamp"
         likesAmount:
           $ref: "#/components/schemas/Amount"
-        comments:
-          $ref: "#/components/schemas/Comments"
+        commentsAmount:
+          $ref: "#/components/schemas/Amount"
+        isLiked:
+          description: boolean value indicating if the photo is liked by the authenticated user
+          type: boolean
+          readOnly: true
           
     Photos:
       description: |
@@ -944,6 +952,8 @@ components:
           $ref: "#/components/schemas/UniqueID"
         author: 
           $ref: "#/components/schemas/UniqueID"
+        username: 
+          $ref: "#/components/schemas/Username"
         timestamp:
           $ref: "#/components/schemas/Timestamp"
         commentText:

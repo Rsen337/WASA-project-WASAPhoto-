@@ -47,10 +47,12 @@ type UserProfile struct {
 	Photos     int    `json:"photos"`
 	Followers  int    `json:"followers"`
 	Followings int    `json:"followings"`
+	Followed  bool   `json:"followed"`
+	Banned   bool   `json:"banned"`	
 }
 
 // GetUserProfile retrieves the profile of a user
-func (db appdbimpl) GetUserProfile(userId string) (UserProfile, error) {
+func (db appdbimpl) GetUserProfile(userId string, authUser string) (UserProfile, error) {
 	username, err := db.GetUsername(userId)
 	if err != nil {
 		return UserProfile{}, err
@@ -74,11 +76,22 @@ func (db appdbimpl) GetUserProfile(userId string) (UserProfile, error) {
 		return UserProfile{}, err
 	}
 
+	banned, err := db.IsBanned(authUser, userId)
+	if err != nil {
+		return UserProfile{}, err
+	}
+	followed, err := db.IsFollowed(authUser, userId)
+	if err != nil {
+		return UserProfile{}, err
+	}
+
 	return UserProfile{
 		UserID:     userId,
 		Username:   username,
 		Photos:     photos,
 		Followers:  followers,
 		Followings: followees,
+		Followed:   followed,
+		Banned:     banned,
 	}, nil
 }
