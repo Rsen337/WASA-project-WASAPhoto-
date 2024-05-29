@@ -4,20 +4,20 @@ import "time"
 
 // Photo represents the structure of a photo.
 type Photo struct {
-	PhotoID     string    `json:"photoID"`     // PhotoID is the unique identifier of the photo.
-	UserID      string    `json:"author"`      // UserID is the identifier of the user who uploaded the photo.
-	Username	string    `json:"username"`    // Username is the username of the user who uploaded the photo.
-	Timestamp   time.Time `json:"timestamp"`   // Timestamp is the time when the photo was uploaded.
-	LikesAmount int       `json:"likesAmount"` // LikesAmount is the number of likes the photo has received.
-	CommentsAmount    int `json:"commentsAmount"`    // Comments is a list of comments on the photo.
-	IsLiked     bool      `json:"isLiked"`     // IsLiked indicates if the photo is liked by the user.
+	PhotoID        string    `json:"photoID"`        // PhotoID is the unique identifier of the photo.
+	UserID         string    `json:"author"`         // UserID is the identifier of the user who uploaded the photo.
+	Username       string    `json:"username"`       // Username is the username of the user who uploaded the photo.
+	Timestamp      time.Time `json:"timestamp"`      // Timestamp is the time when the photo was uploaded.
+	LikesAmount    int       `json:"likesAmount"`    // LikesAmount is the number of likes the photo has received.
+	CommentsAmount int       `json:"commentsAmount"` // Comments is a list of comments on the photo.
+	IsLiked        bool      `json:"isLiked"`        // IsLiked indicates if the photo is liked by the user.
 }
 
 // Comment represents the structure of a comment.
 type Comment struct {
 	CommentID string    `json:"commentID"`   // CommentID is the unique identifier of the comment.
 	UserID    string    `json:"author"`      // UserID is the identifier of the user who posted the comment.
-	Username	string    `json:"username"`    // Username is the username of the user who posted the comment.
+	Username  string    `json:"username"`    // Username is the username of the user who posted the comment.
 	Content   string    `json:"commentText"` // Content is the text content of the comment.
 	Timestamp time.Time `json:"timestamp"`   // Timestamp is the time when the comment was posted.
 }
@@ -56,7 +56,6 @@ func (db *appdbimpl) GetPhotoLikes(photoID string) (int, error) {
 	}
 	return likesAmount, nil
 }
-
 
 // GetPhotoCommentsCount retrieves the number of comments for a photo with the given photo ID.
 func (db *appdbimpl) GetPhotoCommentsCount(photoID string) (int, error) {

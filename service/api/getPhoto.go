@@ -59,7 +59,6 @@ func (rt *_router) getPhoto(w http.ResponseWriter, r *http.Request, ps httproute
 		return
 	}
 
-
 	// // Set the response headers
 	// w.Header().Set("Content-Type", "image/jpeg")
 	// w.Header().Set("Content-Length", strconv.FormatInt(fileInfo.Size(), 10))
@@ -120,13 +119,13 @@ func (rt *_router) getPhotoDetails(w http.ResponseWriter, r *http.Request, ps ht
 	w.Header().Set("Content-Type", "application/json")
 
 	photo := database.Photo{
-		PhotoID:     photoId,
-		UserID:      userId,
-		Username:    username,
-		Timestamp:   timestamp,
-		LikesAmount: likesAmount,
-		CommentsAmount:    commentsAmount,
-		IsLiked:     isLiked,
+		PhotoID:        photoId,
+		UserID:         userId,
+		Username:       username,
+		Timestamp:      timestamp,
+		LikesAmount:    likesAmount,
+		CommentsAmount: commentsAmount,
+		IsLiked:        isLiked,
 	}
 	err = json.NewEncoder(w).Encode(photo)
 	if err != nil {

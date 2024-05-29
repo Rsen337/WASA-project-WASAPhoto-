@@ -47,8 +47,8 @@ type UserProfile struct {
 	Photos     int    `json:"photos"`
 	Followers  int    `json:"followers"`
 	Followings int    `json:"followings"`
-	Followed  bool   `json:"followed"`
-	Banned   bool   `json:"banned"`	
+	Followed   bool   `json:"followed"`
+	Banned     bool   `json:"banned"`
 }
 
 // GetUserProfile retrieves the profile of a user

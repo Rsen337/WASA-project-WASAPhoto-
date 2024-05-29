@@ -20,6 +20,7 @@ func (rt *_router) Handler() http.Handler {
 	// Upload or delete my photos
 	rt.router.GET("/users/:userId/photo", rt.wrap(rt.getUserPhotos))
 	rt.router.POST("/users/:userId/photo", rt.wrap(rt.uploadPhoto))
+	//
 	rt.router.DELETE("/users/:userId/photo/:photoId", rt.wrap(rt.deletePhoto))
 
 	// manage followers
@@ -31,6 +32,7 @@ func (rt *_router) Handler() http.Handler {
 	rt.router.DELETE("/users/:userId/followings/:otherUserId", rt.wrap(rt.unfollowUser))
 
 	// manage bans
+	//
 	rt.router.GET("/users/:userId/banned", rt.wrap(rt.getBannedUsers))
 	rt.router.PUT("/users/:userId/banned/:otherUserId", rt.wrap(rt.banUser))
 	rt.router.DELETE("/users/:userId/banned/:otherUserId", rt.wrap(rt.unbanUser))
@@ -53,6 +55,7 @@ func (rt *_router) Handler() http.Handler {
 	// comments
 	rt.router.GET("/photos/:photoId/comment", rt.wrap(rt.getComments))
 	rt.router.POST("/photos/:photoId/comment", rt.wrap(rt.commentPhoto))
+	//
 	rt.router.DELETE("/photos/:photoId/comment/:commentId", rt.wrap(rt.uncommentPhoto))
 
 	return rt.router

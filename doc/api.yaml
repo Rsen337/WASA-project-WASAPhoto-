@@ -846,7 +846,7 @@ components:
       description: Unique username
       type: string
       example: "Maria"
-      pattern: 'ˆ.*?$'
+      pattern: '^[a-zA-Z0-9_-]{3,32}$'
       minLength: 3
       maxLength: 32 
     
