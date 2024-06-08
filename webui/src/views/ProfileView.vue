@@ -117,7 +117,7 @@ export default {
 					<!-- Photos -->
 					<div id="main-content" v-for="item of stream_data" v-bind:key="item">
 						<!-- PostCard for the photo -->
-						<PostCard :author="requestedProfile" :photoID="item"/>
+						<PostCard :author="requestedProfile" :photoID="item" @photoDeleted="refresh"/>
 					</div>
 
 					<!-- Message when the end is reached -->

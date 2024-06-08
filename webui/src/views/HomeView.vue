@@ -92,7 +92,8 @@ export default {
 					<div id="main-content" v-for="item of stream_data" v-bind:key="item.photoID">
 						<!-- PostCard for each photo -->
 						<PostCard :author="item.author" :photoID="item.photoID" :timestamp="item.timestamp"
-							:comments="item.comments" :likesAmount="item.likesAmount" :username="this.$currentSession()" :liked="false"/>
+							:comments="item.comments" :likesAmount="item.likesAmount" :username="this.$currentSession()" :liked="false" 
+							@phototDeleted="refresh"/>
 					</div>
 
 					<!-- Show a message if there's no more content to show -->

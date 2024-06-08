@@ -354,33 +354,6 @@ paths:
         '403': { $ref: "#/components/responses/Forbidden" }
         '500': { $ref: "#/components/responses/InternalServerError" }
 
-
-  /users/{userId}/banned:
-    parameters:
-      - $ref: "#/components/parameters/UserID"
-    
-    get:
-      parameters:
-        - $ref: "#/components/parameters/Page"
-      tags: ["ban"]
-      summary: Get banned users
-      description: |
-        Get a list of banned users(userIds) of a user in order to see any
-        particular user's details use dedicted path /users/{userId}
-      operationId: getBannedUsers
-      
-      responses:
-        '200':
-          description: List of user profiles 
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Users"
-          
-        '400': { $ref: "#/components/responses/BadRequest" }
-        '401': { $ref: "#/components/responses/Unauthorized" }
-        '500': { $ref: "#/components/responses/InternalServerError" }
-
   /users/{userId}/banned/{otherUserId}:
     parameters:
       - $ref: "#/components/parameters/UserID"

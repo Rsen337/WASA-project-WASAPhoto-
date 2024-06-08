@@ -49,6 +49,24 @@ export default {
 			})
 		},
 
+		// Delete a comment
+		deleteComment(commentID) {
+
+			if (this.$currentSession() !== this.author) {
+				alert("Forbidden: You are not the owner of this photo.");
+				return;
+			}
+
+			this.$axios.delete("/photos/" + this.photoID + "/comment/" + commentID).then(response => {
+				if (response == null) return
+				this.post_comments_cnt--;
+				// Fetch comments from the server
+				this.comments_data = [];
+				this.page = 1;
+				this.getComments();
+			})
+		},
+
 		// Show or hide the comments section
 		showHideComments() {
 			// If comments are already shown, hide them and reset the data
@@ -101,6 +119,19 @@ export default {
 				this.post_liked = false;
 				this.post_like_cnt--;
 			})
+		},
+
+		// Delete the photo
+		deletePhoto() {
+			if (this.$currentSession() !== this.author) {
+				alert("Forbidden: You are not the owner of this photo.");
+				return;
+			}
+
+			this.$axios.delete("/users/" + this.$currentSession() + '/photo/' + this.photoID).then(response => {
+				if (response == null) return;
+				this.$emit("photoDeleted");
+			});
 		},
 	},
 
@@ -158,6 +189,9 @@ export default {
 				<!-- Comment and like buttons -->
 				<div class="col-2">
 					<div class="card-body d-flex justify-content-end" style="display: inline-flex">
+						<a @click="deletePhoto" class="btn btn-link btn-sm text-danger">
+							<h5><i class="bi bi-trash"></i></h5>
+						</a>
 						<a @click="showHideComments">
 							<h5><i class="card-title bi bi-chat-right pe-1"></i></h5>
 						</a>
@@ -172,7 +206,7 @@ export default {
 						<h5></h5>
 					</div>
 				</div>
-			</div>
+				</div>
 
 			<!-- Comments section -->
 			<div v-if="comments_shown">
@@ -182,6 +216,7 @@ export default {
 					</div>
 					<div class="col-5 card-body border-top text-end text-secondary">
 						{{ item.timestamp }}
+						<button @click="deleteComment(item.commentID)" class="btn btn-link btn-sm text-danger">Delete</button>
 					</div>
 				</div>
 
@@ -200,8 +235,7 @@ export default {
 
 					<!-- Comment publish button -->
 					<div class="col-1 card-body border-top text-end ps-0 d-flex">
-						<button style="width: 100%" type="button" class="btn btn-primary"
-							@click="postComment">Go</button>
+						<button style="width: 100%" type="button" class="btn btn-primary" @click="postComment">Go</button>
 					</div>
 				</div>
 			</div>
