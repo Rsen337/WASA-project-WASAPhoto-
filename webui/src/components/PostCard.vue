@@ -19,7 +19,7 @@ export default {
 			timestamp: "",
 			username: "",
 			author: "",
-			
+			isMyPhoto: false,
 
 			// Whether the comments have ended (no more comments to load)
 			data_ended: false,
@@ -160,6 +160,7 @@ export default {
 			this.post_liked = response.data.isLiked;
 			this.username = response.data.username;
 			this.author = response.data.author;
+			this.isMyPhoto = this.$currentSession() === this.author;
 		});
 	},
 }
@@ -189,7 +190,7 @@ export default {
 				<!-- Comment and like buttons -->
 				<div class="col-2">
 					<div class="card-body d-flex justify-content-end" style="display: inline-flex">
-						<a @click="deletePhoto" class="btn btn-link btn-sm text-danger">
+						<a v-if="isMyPhoto" @click="deletePhoto" class="btn btn-link btn-sm text-danger">
 							<h5><i class="bi bi-trash"></i></h5>
 						</a>
 						<a @click="showHideComments">
@@ -216,7 +217,9 @@ export default {
 					</div>
 					<div class="col-5 card-body border-top text-end text-secondary">
 						{{ item.timestamp }}
-						<button @click="deleteComment(item.commentID)" class="btn btn-link btn-sm text-danger">Delete</button>
+						<span v-if="isMyPhoto" class="col-10 card-body border-top text-end">
+							<button @click="deleteComment(item.commentID)" class="btn btn-link btn-sm text-danger">Delete</button>
+						</span>
 					</div>
 				</div>
 

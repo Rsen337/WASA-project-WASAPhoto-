@@ -1,6 +1,7 @@
 package api
 
 import (
+	"log"
 	"net/http"
 	"path/filepath"
 	"regexp"
@@ -101,5 +102,9 @@ func writeResponse(w http.ResponseWriter, status int, message string) {
 	w.WriteHeader(status)
 	w.Header().Set("Content-Type", "text/plain")
 
-	w.Write([]byte(message))
+	_, err := w.Write([]byte(message))
+	if err != nil {
+		log.Println(err)
+	}
+
 }

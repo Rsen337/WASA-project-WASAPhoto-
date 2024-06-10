@@ -31,6 +31,12 @@ func (db *appdbimpl) GetUserPhotos(userId string, page int) ([]string, error) {
 		}
 		photoIds = append(photoIds, photoId)
 	}
+
+	// Check for any errors during iteration
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
 	return photoIds, nil
 }
 

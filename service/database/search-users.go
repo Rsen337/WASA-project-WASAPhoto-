@@ -4,6 +4,8 @@ package database
 type User struct {
 	UserID   string `json:"userId"`
 	Username string `json:"username"`
+	Followed bool   `json:"followed"`
+	Banned   bool   `json:"banned"`
 }
 
 // SearchUser searches for users based on the provided search criteria
@@ -30,6 +32,15 @@ func (db appdbimpl) SearchUser(toSearch string, userId string, page int) ([]User
 		if err != nil {
 			return nil, err
 		}
+		user.Banned, err = db.IsBanned(userId, user.UserID)
+		if err != nil {
+			return nil, err
+		}
+		user.Followed, err = db.IsFollowed(userId, user.UserID)
+		if err != nil {
+			return nil, err
+		}
+
 		users = append(users, user)
 	}
 

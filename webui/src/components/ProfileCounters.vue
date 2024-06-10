@@ -40,7 +40,11 @@ export default {
         async loadContent() {
             // Fetch followers / following from the server
             // uses /followers and /following endpoints
-            let response = await this.$axios.get("/users/" + this.user_data["userId"] + "/" + this.data_type + "?page=" + this.page)
+            if (this.data_type == "followers")
+                var response = await this.$axios.get("/users/" + this.user_data["userId"] + "/followers?page=" + this.page)
+            else if (this.data_type == "followings")
+                var response = await this.$axios.get("/users/" + this.user_data["userId"] + "/followings?page=" + this.page)
+
             if (response.data == null) return false // An error occurred. The interceptor will show a modal
 
             // If the server returned less elements than requested,
@@ -72,7 +76,7 @@ export default {
     <Modal ref="mymodal" id="userModal" :title="data_type" @isClose="this.page=1">
         <ul>
             <li v-for="item in modal_data" :key="item.userId" class="mb-2" style="cursor: pointer"
-                @click="visit(item.userId)" data-bs-dismiss="modal">
+                @click="visit(item.userId); this.page=1" data-bs-dismiss="modal">
                 <h5>{{ item.username }}</h5>
             </li>
             <IntersectionObserver sentinal-name="load-more-users" @on-intersection-element="loadMore" />

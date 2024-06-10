@@ -1,5 +1,7 @@
 package database
 
+import "strings"
+
 // SetMyUsername changes the username associated with the given userId.
 // If the new username is similar to the old one, it returns an error.
 // Otherwise, it updates the username and returns nil.
@@ -27,7 +29,7 @@ func (db *appdbimpl) UsernameIsSame(userId string, username string) (bool, error
 // It returns true if the username is taken, false otherwise.
 func (db *appdbimpl) UsernameIsTaken(userId string, username string) (bool, error) {
 	var count int
-	err := db.c.QueryRow("SELECT COUNT(*) FROM users WHERE username = ?", username).Scan(&count)
+	err := db.c.QueryRow("SELECT COUNT(*) FROM users WHERE LOWER(username) = LOWER(?)", strings.ToLower(username)).Scan(&count)
 	if err != nil {
 		return false, err
 	}

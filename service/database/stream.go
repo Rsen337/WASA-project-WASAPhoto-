@@ -48,5 +48,10 @@ func (db *appdbimpl) GetMyStream(userID string, page int) ([]Photo, error) {
 		photos = append(photos, photo)
 	}
 
+	// Check for any errors during iteration
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
 	return photos, nil
 }

@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: WASAPhoto API
   description: API for WASAPhoto, a webapp for sharing photos.
-  version: 3.3.0
+  version: 3.4.0
   
 tags:
   - name: "login"
@@ -122,6 +122,7 @@ paths:
               schema:
                 description: Okay message
                 type: string
+                pattern: "^[A-Za-z0-9_\\- ]+$"
                 minLength: 0
                 maxLength: 2000
                 example: Username changed successfully 
@@ -136,6 +137,7 @@ paths:
               schema:
                 description: Error message
                 type: string
+                pattern: "^[A-Za-z0-9_\\- ]+$"
                 minLength: 0
                 maxLength: 2000
                 example: Username is already taken by other user
@@ -196,6 +198,7 @@ paths:
               schema:
                 description: Created message
                 type: string
+                pattern: "^[A-Za-z0-9_\\- ]+$"
                 minLength: 0
                 maxLength: 2000
                 example: Photo uploaded successfully
@@ -224,6 +227,7 @@ paths:
               schema:
                 description: Okay message
                 type: string
+                pattern: "^[A-Za-z0-9_\\- ]+$"
                 minLength: 0
                 maxLength: 2000
                 example: Photo removed successfully
@@ -309,6 +313,7 @@ paths:
               schema:
                 description: Created message
                 type: string
+                pattern: "^[A-Za-z0-9_\\- ]+$"
                 minLength: 0
                 maxLength: 2000
                 example: User followed successfully
@@ -320,6 +325,7 @@ paths:
               schema:
                 description: Okay message
                 type: string
+                pattern: "^[A-Za-z0-9_\\- ]+$"
                 minLength: 0
                 maxLength: 2000
                 example: User already followed
@@ -344,6 +350,7 @@ paths:
               schema:
                 description: Okay message
                 type: string
+                pattern: "^[A-Za-z0-9_\\- ]+$"
                 minLength: 0
                 maxLength: 2000
                 example: User unfollowed successfully
@@ -373,6 +380,7 @@ paths:
               schema:
                 description: Created message
                 type: string
+                pattern: "^[A-Za-z0-9_\\- ]+$"
                 minLength: 0
                 maxLength: 2000
                 example: User banned successfully
@@ -385,6 +393,7 @@ paths:
               schema:
                 description: Okay message
                 type: string
+                pattern: "^[A-Za-z0-9_\\- ]+$"
                 minLength: 0
                 maxLength: 2000
                 example: User already banned
@@ -409,6 +418,7 @@ paths:
               schema:
                 description: Okay message
                 type: string
+                pattern: "^[A-Za-z0-9_\\- ]+$"
                 minLength: 0
                 maxLength: 2000
                 example: User unbanned
@@ -556,6 +566,7 @@ paths:
               schema:
                 description: Created message
                 type: string
+                pattern: "^[A-Za-z0-9_\\- ]+$"
                 minLength: 0
                 maxLength: 2000
                 example: Photo liked successfully
@@ -568,6 +579,7 @@ paths:
               schema:
                 description: Okay message
                 type: string
+                pattern: "^[A-Za-z0-9_\\- ]+$"
                 minLength: 0
                 maxLength: 2000
                 example: Photo already liked
@@ -591,6 +603,7 @@ paths:
               schema:
                 description: Okay message
                 type: string
+                pattern: "^[A-Za-z0-9_\\- ]+$"
                 minLength: 0
                 maxLength: 2000
                 example: Photo unliked successfully
@@ -650,6 +663,7 @@ paths:
               schema:
                 description: Created message
                 type: string
+                pattern: "^[A-Za-z0-9_\\- ]+$"
                 minLength: 0
                 maxLength: 2000
                 example: Comment added successfully
@@ -680,6 +694,7 @@ paths:
               schema:
                 description: Okay message
                 type: string
+                pattern: "^[A-Za-z0-9_\\- ]+$"
                 minLength: 0
                 maxLength: 2000
                 example: Comment removed successfully
@@ -767,6 +782,7 @@ components:
           schema:
             description: response message string
             type: string
+            pattern: "^[A-Za-z0-9_\\- ]+$"
             minLength: 0
             maxLength: 2000
             example: Bad Request
@@ -778,6 +794,7 @@ components:
           schema:
             description: response message string
             type: string
+            pattern: "^[A-Za-z0-9_\\- ]+$"
             minLength: 0
             maxLength: 2000
             example: Access token missing or invalid
@@ -789,6 +806,7 @@ components:
           schema:
             description: response message string
             type: string
+            pattern: "^[A-Za-z0-9_\\- ]+$"
             minLength: 0
             maxLength: 2000
             example: Forbidden
@@ -800,6 +818,7 @@ components:
           schema:
             description: response message string
             type: string
+            pattern: "^[A-Za-z0-9_\\- ]+$"
             minLength: 0
             maxLength: 2000
             example: Internal Server Error
@@ -826,6 +845,7 @@ components:
     RawPhoto:
       description: binary of an image
       type: string
+      pattern: '^[01]+$'
       minLength: 0
       maxLength: 10000
       format: binary
@@ -882,6 +902,14 @@ components:
             $ref: "#/components/schemas/User/properties/userId"
           username:
             $ref: "#/components/schemas/User/properties/username"
+          followed:
+            description: boolean value indicating if the user is followed by the authenticated user
+            type: boolean
+            readOnly: true
+          banned:
+            description: boolean value indicating if the user is banned by the authenticated user
+            type: boolean
+            readOnly: true
       
     Photo:
       description: | 
@@ -932,6 +960,7 @@ components:
         commentText:
           description: string containing the comment
           type: string
+          pattern: "^[A-Za-z0-9_\\- ]+$"
           minLength: 0
           maxLength: 2000
           example: "You look good, my man :)"

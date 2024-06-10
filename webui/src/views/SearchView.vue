@@ -95,10 +95,11 @@ export default {
 					</div>
 
 					<!-- Search results -->
-					<div id="main-content" v-for="item of streamData" v-bind:key="item.userId">
-						<!-- User card (search result entry) -->
-						<UserCard :user_id="item.userId" :name="item.username" :followed="false"
-							:banned="false" />
+					<div id="main-content">
+						<div v-for="item of streamData" :key="item.userId">
+							<!-- User card (search result entry) -->
+							<UserCard :user_id="item.userId" :name="item.username" :followed="item.followed" :banned="item.banned" />
+						</div>
 					</div>
 
 					<!-- Loading spinner -->
