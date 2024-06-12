@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: WASAPhoto API
   description: API for WASAPhoto, a webapp for sharing photos.
-  version: 3.4.0
+  version: 3.4.1
   
 tags:
   - name: "login"
@@ -125,7 +125,7 @@ paths:
                 pattern: "^[A-Za-z0-9_\\- ]+$"
                 minLength: 0
                 maxLength: 2000
-                example: Username changed successfully 
+                example: "Username changed successfully"
           
         '204':
           description: Username is the similar to the former one
@@ -140,7 +140,7 @@ paths:
                 pattern: "^[A-Za-z0-9_\\- ]+$"
                 minLength: 0
                 maxLength: 2000
-                example: Username is already taken by other user
+                example: "Username is already taken by other user"
           
         '400': { $ref: "#/components/responses/BadRequest" }
         '401': { $ref: "#/components/responses/Unauthorized" }
@@ -201,7 +201,7 @@ paths:
                 pattern: "^[A-Za-z0-9_\\- ]+$"
                 minLength: 0
                 maxLength: 2000
-                example: Photo uploaded successfully
+                example: "Photo uploaded successfully"
         
         '400': { $ref: "#/components/responses/BadRequest" }
         '401': { $ref: "#/components/responses/Unauthorized" }
@@ -230,7 +230,7 @@ paths:
                 pattern: "^[A-Za-z0-9_\\- ]+$"
                 minLength: 0
                 maxLength: 2000
-                example: Photo removed successfully
+                example: "Photo removed successfully"
         
         '204':
           description: Photo not found
@@ -316,7 +316,7 @@ paths:
                 pattern: "^[A-Za-z0-9_\\- ]+$"
                 minLength: 0
                 maxLength: 2000
-                example: User followed successfully
+                example: "User followed successfully"
             
         '200':
           description: User already followed
@@ -328,7 +328,7 @@ paths:
                 pattern: "^[A-Za-z0-9_\\- ]+$"
                 minLength: 0
                 maxLength: 2000
-                example: User already followed
+                example: "User already followed"
             
         
         '400': { $ref: "#/components/responses/BadRequest" }
@@ -353,7 +353,7 @@ paths:
                 pattern: "^[A-Za-z0-9_\\- ]+$"
                 minLength: 0
                 maxLength: 2000
-                example: User unfollowed successfully
+                example: "User unfollowed successfully"
             
         
         '400': { $ref: "#/components/responses/BadRequest" }
@@ -383,7 +383,7 @@ paths:
                 pattern: "^[A-Za-z0-9_\\- ]+$"
                 minLength: 0
                 maxLength: 2000
-                example: User banned successfully
+                example: "User banned successfully"
             
         
         '200':
@@ -396,7 +396,7 @@ paths:
                 pattern: "^[A-Za-z0-9_\\- ]+$"
                 minLength: 0
                 maxLength: 2000
-                example: User already banned
+                example: "User already banned"
             
           
         '400': { $ref: "#/components/responses/BadRequest" }
@@ -421,7 +421,7 @@ paths:
                 pattern: "^[A-Za-z0-9_\\- ]+$"
                 minLength: 0
                 maxLength: 2000
-                example: User unbanned
+                example: "User unbanned"
           
         '400': { $ref: "#/components/responses/BadRequest" }
         '401': { $ref: "#/components/responses/Unauthorized" }
@@ -569,7 +569,7 @@ paths:
                 pattern: "^[A-Za-z0-9_\\- ]+$"
                 minLength: 0
                 maxLength: 2000
-                example: Photo liked successfully
+                example: "Photo liked successfully"
             
           
         '200':
@@ -582,7 +582,7 @@ paths:
                 pattern: "^[A-Za-z0-9_\\- ]+$"
                 minLength: 0
                 maxLength: 2000
-                example: Photo already liked
+                example: "Photo already liked"
             
           
         '400': { $ref: "#/components/responses/BadRequest" }
@@ -606,7 +606,7 @@ paths:
                 pattern: "^[A-Za-z0-9_\\- ]+$"
                 minLength: 0
                 maxLength: 2000
-                example: Photo unliked successfully
+                example: "Photo unliked successfully"
             
           
         '400': { $ref: "#/components/responses/BadRequest" }
@@ -666,7 +666,7 @@ paths:
                 pattern: "^[A-Za-z0-9_\\- ]+$"
                 minLength: 0
                 maxLength: 2000
-                example: Comment added successfully
+                example: "Comment added successfully"
             
           
         '400': { $ref: "#/components/responses/BadRequest" }
@@ -697,7 +697,7 @@ paths:
                 pattern: "^[A-Za-z0-9_\\- ]+$"
                 minLength: 0
                 maxLength: 2000
-                example: Comment removed successfully
+                example: "Comment removed successfully"
             
         
         '204': 
@@ -785,7 +785,7 @@ components:
             pattern: "^[A-Za-z0-9_\\- ]+$"
             minLength: 0
             maxLength: 2000
-            example: Bad Request
+            example: "Bad Request"
 
     Unauthorized:
       description: The access token is missing or invalid
@@ -797,7 +797,7 @@ components:
             pattern: "^[A-Za-z0-9_\\- ]+$"
             minLength: 0
             maxLength: 2000
-            example: Access token missing or invalid
+            example: "Access token missing or invalid"
       
     Forbidden:
       description: You do not have access rights to the operation
@@ -809,7 +809,7 @@ components:
             pattern: "^[A-Za-z0-9_\\- ]+$"
             minLength: 0
             maxLength: 2000
-            example: Forbidden
+            example: "Forbidden"
       
     InternalServerError:
       description: The server encountered an internal error. Further info in server logs
@@ -821,7 +821,7 @@ components:
             pattern: "^[A-Za-z0-9_\\- ]+$"
             minLength: 0
             maxLength: 2000
-            example: Internal Server Error
+            example: "Internal Server Error"
       
       
   schemas:
