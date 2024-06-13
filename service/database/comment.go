@@ -72,6 +72,28 @@ func (db appdbimpl) IsPhotoOwner(photoID, userID string) (bool, error) {
 	return exists, nil
 }
 
+// IsCommentOwner checks if a user is the owner of a comment.
+// It returns true if the user is the owner, false otherwise.
+// It also returns an error if there was a problem executing the query.
+func (db appdbimpl) IsCommentOwner(commentID, userID string) (bool, error) {
+	// Prepare the SQL query
+	query := "SELECT EXISTS(SELECT 1 FROM comments WHERE commentId = ? AND userId = ?)"
+	stmt, err := db.c.Prepare(query)
+	if err != nil {
+		return false, err
+	}
+	defer stmt.Close()
+
+	// Execute the SQL query
+	var exists bool
+	err = stmt.QueryRow(commentID, userID).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+
+	return exists, nil
+}
+
 // CommentExists checks if a comment exists in the database.
 // It returns true if the comment exists, false otherwise.
 // It also returns an error if there was a problem executing the query.

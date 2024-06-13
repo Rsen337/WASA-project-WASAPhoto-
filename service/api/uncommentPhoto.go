@@ -28,8 +28,16 @@ func (rt *_router) uncommentPhoto(w http.ResponseWriter, r *http.Request, ps htt
 		writeResponse(w, http.StatusInternalServerError, "")
 		return
 	} else if !isOwner {
-		writeResponse(w, http.StatusForbidden, "You are not the owner of the photo")
-		return
+		// Check if the user is the owner of the comment.
+		isCommentOwner, err := rt.db.IsCommentOwner(commentID, reqID)
+		if err != nil {
+			ctx.Logger.WithError(err).Error("uncommentPhoto: Failed to check if user is the owner of the comment")
+			writeResponse(w, http.StatusInternalServerError, "")
+			return
+		} else if !isCommentOwner {
+			writeResponse(w, http.StatusForbidden, "You are not the owner of the comment or the photo")
+			return
+		}
 	}
 
 	// Check if the comment exists.

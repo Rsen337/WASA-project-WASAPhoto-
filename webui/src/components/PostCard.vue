@@ -51,12 +51,6 @@ export default {
 
 		// Delete a comment
 		deleteComment(commentID) {
-
-			if (this.$currentSession() !== this.author) {
-				alert("Forbidden: You are not the owner of this photo.");
-				return;
-			}
-
 			this.$axios.delete("/photos/" + this.photoID + "/comment/" + commentID).then(response => {
 				if (response == null) return
 				this.post_comments_cnt--;
@@ -123,11 +117,6 @@ export default {
 
 		// Delete the photo
 		deletePhoto() {
-			if (this.$currentSession() !== this.author) {
-				alert("Forbidden: You are not the owner of this photo.");
-				return;
-			}
-
 			this.$axios.delete("/users/" + this.$currentSession() + '/photo/' + this.photoID).then(response => {
 				if (response == null) return;
 				this.$emit("photoDeleted");
@@ -217,7 +206,7 @@ export default {
 					</div>
 					<div class="col-5 card-body border-top text-end text-secondary">
 						{{ item.timestamp }}
-						<span v-if="isMyPhoto" class="col-10 card-body border-top text-end">
+						<span v-if="isMyPhoto || item.author === this.$currentSession()" class="col-10 card-body border-top text-end">
 							<button @click="deleteComment(item.commentID)" class="btn btn-link btn-sm text-danger">Delete</button>
 						</span>
 					</div>

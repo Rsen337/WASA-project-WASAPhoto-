@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: WASAPhoto API
   description: API for WASAPhoto, a webapp for sharing photos.
-  version: 3.4.1
+  version: 3.4.2
   
 tags:
   - name: "login"
@@ -683,7 +683,7 @@ paths:
       summary: Remove a comment from a photo provided that it is your photo
       description: |
         Remove a comment from a specific photo provided that you are the author
-        of the photo under which the comment lies.
+        of the photo under which the comment lies or you are the owner of the comment itself.
       operationId: uncommentPhoto
       
       responses:
@@ -960,7 +960,7 @@ components:
         commentText:
           description: string containing the comment
           type: string
-          pattern: "^[A-Za-z0-9_\\- ]+$"
+          pattern: "^[\x20-\x7E]+$"
           minLength: 0
           maxLength: 2000
           example: "You look good, my man :)"

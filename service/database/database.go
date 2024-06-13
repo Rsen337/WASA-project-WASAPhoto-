@@ -93,6 +93,7 @@ type AppDatabase interface {
 	IsPhotoOwner(photoId string, userId string) (bool, error)
 	CommentExists(commentId string) (bool, error)
 	GetPhotoCommentsCount(photoID string) (int, error)
+	IsCommentOwner(commentId string, userId string) (bool, error)
 
 	Ping() error
 }
